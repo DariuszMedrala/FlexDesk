@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlexDesk.Application\FlexDesk.Application.csproj" />
+    <ProjectReference Include="..\FlexDesk.Domain\FlexDesk.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

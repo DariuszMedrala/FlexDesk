@@ -1,0 +1,44 @@
+# Build output
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.userprefs
+
+# .NET
+project.lock.json
+artifacts/
+msbuild.log
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.*.Local.json
+*.secrets.json
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Working materials (not part of the graded project)
+.claude/
+Projekt indywidualny Aplikacja webowa.docx
+WYTYCZNE_PROJEKTU.md
+DOKUMENTACJA_ROBOCZA.md

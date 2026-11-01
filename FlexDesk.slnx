@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FlexDesk.Api/FlexDesk.Api.csproj" />
+    <Project Path="src/FlexDesk.Application/FlexDesk.Application.csproj" />
+    <Project Path="src/FlexDesk.Domain/FlexDesk.Domain.csproj" />
+    <Project Path="src/FlexDesk.Infrastructure/FlexDesk.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FlexDesk.Tests/FlexDesk.Tests.csproj" />
+  </Folder>
+</Solution>
