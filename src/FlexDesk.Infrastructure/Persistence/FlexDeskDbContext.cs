@@ -1,9 +1,10 @@
+using FlexDesk.Application.Common.Persistence;
 using FlexDesk.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FlexDesk.Infrastructure.Persistence;
 
-public class FlexDeskDbContext : DbContext
+public class FlexDeskDbContext : DbContext, IApplicationDbContext
 {
     public FlexDeskDbContext(DbContextOptions<FlexDeskDbContext> options)
         : base(options)

@@ -1,3 +1,4 @@
+using FlexDesk.Application.Common.Persistence;
 using FlexDesk.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,9 @@ public static class DependencyInjection
             options
                 .UseNpgsql(connectionString)
                 .UseSnakeCaseNamingConvention());
+
+        services.AddScoped<IApplicationDbContext>(provider =>
+            provider.GetRequiredService<FlexDeskDbContext>());
 
         return services;
     }
