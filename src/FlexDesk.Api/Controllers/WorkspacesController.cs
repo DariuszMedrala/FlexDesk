@@ -1,5 +1,7 @@
 using FlexDesk.Application.Workspaces;
 using FlexDesk.Application.Workspaces.Dtos;
+using FlexDesk.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlexDesk.Api.Controllers;
@@ -16,6 +18,7 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<WorkspaceDto>>> GetAll(CancellationToken cancellationToken)
     {
         var workspaces = await _workspaceService.GetAllAsync(cancellationToken);
@@ -23,6 +26,7 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<ActionResult<WorkspaceDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var workspace = await _workspaceService.GetByIdAsync(id, cancellationToken);
@@ -30,6 +34,7 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<ActionResult<WorkspaceDto>> Create(CreateWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var created = await _workspaceService.CreateAsync(request, cancellationToken);
@@ -37,6 +42,7 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<ActionResult<WorkspaceDto>> Update(Guid id, UpdateWorkspaceRequest request, CancellationToken cancellationToken)
     {
         var updated = await _workspaceService.UpdateAsync(id, request, cancellationToken);
@@ -44,6 +50,7 @@ public class WorkspacesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _workspaceService.DeleteAsync(id, cancellationToken);

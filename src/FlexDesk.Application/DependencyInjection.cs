@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using FlexDesk.Application.Authentication;
 using FlexDesk.Application.Workspaces;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         services.AddScoped<IWorkspaceService, WorkspaceService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

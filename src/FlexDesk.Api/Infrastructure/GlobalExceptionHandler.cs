@@ -62,6 +62,7 @@ public class GlobalExceptionHandler : IExceptionHandler
     private static (int StatusCode, string Title) MapException(Exception exception) => exception switch
     {
         ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
+        UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
         NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
         ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
         BusinessRuleException => (StatusCodes.Status400BadRequest, "Business rule violated"),
