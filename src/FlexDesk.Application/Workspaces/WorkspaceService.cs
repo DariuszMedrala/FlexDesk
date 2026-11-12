@@ -1,4 +1,5 @@
 using FlexDesk.Application.Common.Exceptions;
+using FlexDesk.Application.Common.Models;
 using FlexDesk.Application.Common.Persistence;
 using FlexDesk.Application.Workspaces.Dtos;
 using FlexDesk.Domain.Entities;
@@ -23,13 +24,44 @@ public class WorkspaceService : IWorkspaceService
         _updateValidator = updateValidator;
     }
 
-    public async Task<IReadOnlyList<WorkspaceDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResult<WorkspaceDto>> GetAsync(WorkspaceQuery query, CancellationToken cancellationToken = default)
     {
-        return await _context.Workspaces
-            .AsNoTracking()
+        var page = Math.Max(1, query.Page);
+        var pageSize = Math.Clamp(query.PageSize, 1, 100);
+
+        var workspaces = _context.Workspaces.AsNoTracking();
+
+        if (query.Type.HasValue)
+        {
+            workspaces = workspaces.Where(w => w.Type == query.Type.Value);
+        }
+
+        if (query.MinCapacity.HasValue)
+        {
+            workspaces = workspaces.Where(w => w.Capacity >= query.MinCapacity.Value);
+        }
+
+        if (query.IsActive.HasValue)
+        {
+            workspaces = workspaces.Where(w => w.IsActive == query.IsActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim().ToLower();
+            workspaces = workspaces.Where(w => w.Name.ToLower().Contains(search));
+        }
+
+        var totalCount = await workspaces.CountAsync(cancellationToken);
+
+        var items = await workspaces
             .OrderBy(w => w.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(w => new WorkspaceDto(w.Id, w.Name, w.Type, w.Capacity, w.PricePerHour, w.IsActive))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<WorkspaceDto>(items, page, pageSize, totalCount);
     }
 
     public async Task<WorkspaceDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

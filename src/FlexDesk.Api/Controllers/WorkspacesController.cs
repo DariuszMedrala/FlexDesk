@@ -1,3 +1,4 @@
+using FlexDesk.Application.Common.Models;
 using FlexDesk.Application.Workspaces;
 using FlexDesk.Application.Workspaces.Dtos;
 using FlexDesk.Domain.Enums;
@@ -19,9 +20,9 @@ public class WorkspacesController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IReadOnlyList<WorkspaceDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<WorkspaceDto>>> Get([FromQuery] WorkspaceQuery query, CancellationToken cancellationToken)
     {
-        var workspaces = await _workspaceService.GetAllAsync(cancellationToken);
+        var workspaces = await _workspaceService.GetAsync(query, cancellationToken);
         return Ok(workspaces);
     }
 
