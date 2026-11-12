@@ -2,6 +2,7 @@ using FlexDesk.Application.Common.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlexDesk.Api.Infrastructure;
 
@@ -41,6 +42,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                 : exception.Message
         };
 
+        if (exception is DbUpdateConcurrencyException)
+        {
+            problemDetails.Detail = "The resource was modified concurrently. Please retry.";
+        }
+
         if (exception is ValidationException validationException)
         {
             problemDetails.Detail = "One or more validation errors occurred.";
@@ -63,8 +69,10 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
         UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
+        ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
         NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
         ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
+        DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Conflict"),
         BusinessRuleException => (StatusCodes.Status400BadRequest, "Business rule violated"),
         _ => (StatusCodes.Status500InternalServerError, "Internal server error")
     };
