@@ -13,4 +13,10 @@ public static class ReservationPolicy
         WorkspaceType.Office => TimeSpan.FromHours(4),
         _ => TimeSpan.FromHours(1)
     };
+
+    public static bool MeetsMinimumDuration(WorkspaceType type, TimeSpan duration) =>
+        duration >= MinimumDuration(type);
+
+    public static bool CanCancel(DateTime startTime, DateTime now, bool isAdmin) =>
+        isAdmin || startTime - now > TimeSpan.FromHours(CancellationCutoffHours);
 }

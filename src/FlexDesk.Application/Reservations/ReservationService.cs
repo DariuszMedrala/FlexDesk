@@ -93,11 +93,11 @@ public class ReservationService : IReservationService
             throw new BusinessRuleException("Workspace is not available for reservations.");
         }
 
-        var minimumDuration = ReservationPolicy.MinimumDuration(workspace.Type);
-        if (endTime - startTime < minimumDuration)
+        if (!ReservationPolicy.MeetsMinimumDuration(workspace.Type, endTime - startTime))
         {
+            var minimumHours = ReservationPolicy.MinimumDuration(workspace.Type).TotalHours;
             throw new BusinessRuleException(
-                $"A {workspace.Type} must be reserved for at least {minimumDuration.TotalHours:0} hour(s).");
+                $"A {workspace.Type} must be reserved for at least {minimumHours:0} hour(s).");
         }
 
         var hasConflict = await _context.Reservations.AnyAsync(
@@ -185,14 +185,11 @@ public class ReservationService : IReservationService
             throw new ConflictException("The reservation is already cancelled.");
         }
 
-        if (!_currentUser.IsAdmin)
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (!ReservationPolicy.CanCancel(reservation.StartTime, now, _currentUser.IsAdmin))
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-            if (reservation.StartTime - now <= TimeSpan.FromHours(ReservationPolicy.CancellationCutoffHours))
-            {
-                throw new BusinessRuleException(
-                    $"A reservation can only be cancelled more than {ReservationPolicy.CancellationCutoffHours} hours before it starts.");
-            }
+            throw new BusinessRuleException(
+                $"A reservation can only be cancelled more than {ReservationPolicy.CancellationCutoffHours} hours before it starts.");
         }
 
         reservation.Status = ReservationStatus.Cancelled;
