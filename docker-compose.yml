@@ -41,5 +41,41 @@ services:
       - "${MAILHOG_SMTP_PORT:-1025}:1025"
       - "${MAILHOG_UI_PORT:-8025}:8025"
 
+  backend:
+    build:
+      context: .
+      dockerfile: src/FlexDesk.Api/Dockerfile
+    container_name: flexdesk-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Secret: ${Jwt__Secret}
+      Jwt__Issuer: ${Jwt__Issuer}
+      Jwt__Audience: ${Jwt__Audience}
+      Jwt__ExpiryMinutes: ${Jwt__ExpiryMinutes}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      Smtp__Host: mailhog
+      Cors__AllowedOrigins__0: "http://localhost:${FRONTEND_PORT:-8080}"
+    ports:
+      - "${BACKEND_PORT:-5080}:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: flexdesk-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+
 volumes:
   flexdesk-db-data:

@@ -1,0 +1,16 @@
+**/bin
+**/obj
+**/.vs
+.git
+.github
+.claude
+frontend
+tests
+**/appsettings.Development.json
+**/appsettings.*.Local.json
+.env
+.env.*
+*.md
+WYTYCZNE_PROJEKTU.md
+DOKUMENTACJA_ROBOCZA.md
+*.docx
