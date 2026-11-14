@@ -1,0 +1,61 @@
+export type WorkspaceType = 'HotDesk' | 'MeetingRoom' | 'Office'
+export type ReservationStatus = 'Pending' | 'Confirmed' | 'Cancelled'
+export type IncidentStatus = 'Reported' | 'InProgress' | 'Resolved'
+export type PaymentMethod = 'Card' | 'BankTransfer' | 'Cash'
+export type UserRole = 'User' | 'Admin'
+
+export interface Workspace {
+  id: string
+  name: string
+  type: WorkspaceType
+  capacity: number
+  pricePerHour: number
+  isActive: boolean
+}
+
+export interface PagedResult<T> {
+  items: T[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+}
+
+export interface Reservation {
+  id: string
+  workspaceId: string
+  workspaceName: string
+  userId: string
+  startTime: string
+  endTime: string
+  totalPrice: number
+  status: ReservationStatus
+  createdAt: string
+}
+
+export interface Payment {
+  id: string
+  reservationId: string
+  amount: number
+  paymentDate: string
+  method: PaymentMethod
+  isSuccessful: boolean
+}
+
+export interface Incident {
+  id: string
+  workspaceId: string
+  workspaceName: string
+  userId: string
+  description: string
+  status: IncidentStatus
+  createdAt: string
+  resolvedAt: string | null
+}
+
+export interface AuthResponse {
+  token: string
+  expiresAtUtc: string
+  email: string
+  role: UserRole
+}
