@@ -1,5 +1,9 @@
+using FlexDesk.Application.Common.Email;
+using FlexDesk.Application.Common.Messaging;
 using FlexDesk.Application.Common.Persistence;
 using FlexDesk.Application.Common.Security;
+using FlexDesk.Infrastructure.Email;
+using FlexDesk.Infrastructure.Messaging;
 using FlexDesk.Infrastructure.Persistence;
 using FlexDesk.Infrastructure.Persistence.Seed;
 using FlexDesk.Infrastructure.Security;
@@ -25,10 +29,17 @@ public static class DependencyInjection
             provider.GetRequiredService<FlexDeskDbContext>());
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.Configure<RabbitMqSettings>(configuration.GetSection(RabbitMqSettings.SectionName));
+        services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
 
         services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<DatabaseSeeder>();
+
+        services.AddSingleton<RabbitMqConnection>();
+        services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddHostedService<ReservationConfirmedConsumer>();
 
         return services;
     }

@@ -1,5 +1,8 @@
+using FlexDesk.Infrastructure.Messaging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Testcontainers.PostgreSql;
 
@@ -16,6 +19,17 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.ConfigureTestServices(services =>
+        {
+            var consumer = services.SingleOrDefault(descriptor =>
+                descriptor.ServiceType == typeof(IHostedService) &&
+                descriptor.ImplementationType == typeof(ReservationConfirmedConsumer));
+
+            if (consumer is not null)
+            {
+                services.Remove(consumer);
+            }
+        });
     }
 
     public async Task InitializeAsync()

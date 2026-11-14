@@ -1,4 +1,5 @@
 using FlexDesk.Application.Common.Exceptions;
+using FlexDesk.Application.Common.Messaging;
 using FlexDesk.Application.Common.Persistence;
 using FlexDesk.Application.Common.Security;
 using FlexDesk.Application.Reservations.Dtos;
@@ -6,6 +7,7 @@ using FlexDesk.Domain.Entities;
 using FlexDesk.Domain.Enums;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FlexDesk.Application.Reservations;
 
@@ -14,6 +16,8 @@ public class ReservationService : IReservationService
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUser _currentUser;
     private readonly TimeProvider _timeProvider;
+    private readonly IEventPublisher _eventPublisher;
+    private readonly ILogger<ReservationService> _logger;
     private readonly IValidator<CreateReservationRequest> _createValidator;
     private readonly IValidator<PayReservationRequest> _payValidator;
 
@@ -21,12 +25,16 @@ public class ReservationService : IReservationService
         IApplicationDbContext context,
         ICurrentUser currentUser,
         TimeProvider timeProvider,
+        IEventPublisher eventPublisher,
+        ILogger<ReservationService> logger,
         IValidator<CreateReservationRequest> createValidator,
         IValidator<PayReservationRequest> payValidator)
     {
         _context = context;
         _currentUser = currentUser;
         _timeProvider = timeProvider;
+        _eventPublisher = eventPublisher;
+        _logger = logger;
         _createValidator = createValidator;
         _payValidator = payValidator;
     }
@@ -138,6 +146,8 @@ public class ReservationService : IReservationService
         await _payValidator.ValidateAndThrowAsync(request, cancellationToken);
 
         var reservation = await _context.Reservations
+            .Include(r => r.User)
+            .Include(r => r.Workspace)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw NotFoundException.For(nameof(Reservation), id);
 
@@ -168,6 +178,8 @@ public class ReservationService : IReservationService
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        await PublishConfirmationAsync(reservation, payment, cancellationToken);
+
         return payment.ToDto();
     }
 
@@ -196,6 +208,26 @@ public class ReservationService : IReservationService
         await _context.SaveChangesAsync(cancellationToken);
 
         return reservation.ToDto();
+    }
+
+    private async Task PublishConfirmationAsync(Reservation reservation, Payment payment, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var @event = new ReservationConfirmedEvent(
+                reservation.Id,
+                reservation.User.Email,
+                reservation.Workspace.Name,
+                reservation.StartTime,
+                reservation.EndTime,
+                payment.Amount);
+
+            await _eventPublisher.PublishAsync(@event, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to publish ReservationConfirmedEvent for {ReservationId}", reservation.Id);
+        }
     }
 
     private Guid RequireUserId() =>
