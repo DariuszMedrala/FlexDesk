@@ -166,6 +166,7 @@ export function ReservationsPage() {
             <thead>
               <tr className="border-b border-border text-left text-xs font-medium text-muted">
                 <th className="px-5 py-3">Przestrzeń</th>
+                {isAdmin && <th className="px-5 py-3">Użytkownik</th>}
                 <th className="px-5 py-3">Początek</th>
                 <th className="px-5 py-3">Koniec</th>
                 <th className="px-5 py-3">Cena</th>
@@ -177,6 +178,7 @@ export function ReservationsPage() {
               {visible.map((reservation) => (
                 <tr key={reservation.id} className="border-b border-border last:border-0">
                   <td className="px-5 py-3 font-medium text-fg">{reservation.workspaceName}</td>
+                  {isAdmin && <td className="px-5 py-3 text-muted">{reservation.userEmail}</td>}
                   <td className="px-5 py-3 text-muted">{formatDate(reservation.startTime)}</td>
                   <td className="px-5 py-3 text-muted">{formatDate(reservation.endTime)}</td>
                   <td className="px-5 py-3 text-fg">{reservation.totalPrice.toFixed(2)}</td>

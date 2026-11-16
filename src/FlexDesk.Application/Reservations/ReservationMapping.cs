@@ -11,6 +11,7 @@ public static class ReservationMapping
             reservation.WorkspaceId,
             reservation.Workspace.Name,
             reservation.UserId,
+            reservation.User.Email,
             reservation.StartTime,
             reservation.EndTime,
             reservation.TotalPrice,

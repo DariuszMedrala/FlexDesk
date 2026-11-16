@@ -7,6 +7,7 @@ public record ReservationDto(
     Guid WorkspaceId,
     string WorkspaceName,
     Guid UserId,
+    string UserEmail,
     DateTime StartTime,
     DateTime EndTime,
     decimal TotalPrice,

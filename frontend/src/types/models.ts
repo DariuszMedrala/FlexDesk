@@ -30,6 +30,7 @@ export interface Reservation {
   workspaceId: string
   workspaceName: string
   userId: string
+  userEmail: string
   startTime: string
   endTime: string
   totalPrice: number

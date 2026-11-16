@@ -57,6 +57,7 @@ public class ReservationService : IReservationService
                 r.WorkspaceId,
                 r.Workspace.Name,
                 r.UserId,
+                r.User.Email,
                 r.StartTime,
                 r.EndTime,
                 r.TotalPrice,
@@ -70,6 +71,7 @@ public class ReservationService : IReservationService
         var reservation = await _context.Reservations
             .AsNoTracking()
             .Include(r => r.Workspace)
+            .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw NotFoundException.For(nameof(Reservation), id);
 
@@ -137,8 +139,17 @@ public class ReservationService : IReservationService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        reservation.Workspace = workspace;
-        return reservation.ToDto();
+        return new ReservationDto(
+            reservation.Id,
+            reservation.WorkspaceId,
+            workspace.Name,
+            reservation.UserId,
+            _currentUser.Email ?? string.Empty,
+            reservation.StartTime,
+            reservation.EndTime,
+            reservation.TotalPrice,
+            reservation.Status,
+            reservation.CreatedAt);
     }
 
     public async Task<PaymentDto> PayAsync(Guid id, PayReservationRequest request, CancellationToken cancellationToken = default)
@@ -190,6 +201,7 @@ public class ReservationService : IReservationService
     {
         var reservation = await _context.Reservations
             .Include(r => r.Workspace)
+            .Include(r => r.User)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw NotFoundException.For(nameof(Reservation), id);
 
