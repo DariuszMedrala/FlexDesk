@@ -30,6 +30,21 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.Property(w => w.IsActive)
             .IsRequired();
 
+        builder.Property(w => w.City)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(w => w.Street)
+            .IsRequired()
+            .HasMaxLength(150);
+
+        builder.Property(w => w.BuildingNumber)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(w => w.Floor)
+            .IsRequired();
+
         builder.Property<uint>("Version")
             .HasColumnName("xmin")
             .HasColumnType("xid")
@@ -41,11 +56,11 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
 
     private static IEnumerable<Workspace> SeedWorkspaces() =>
     [
-        new Workspace { Id = Guid.Parse("a1a1a1a1-0000-0000-0000-000000000001"), Name = "Hot Desk A1", Type = WorkspaceType.HotDesk, Capacity = 1, PricePerHour = 15.00m, IsActive = true },
-        new Workspace { Id = Guid.Parse("a1a1a1a1-0000-0000-0000-000000000002"), Name = "Hot Desk A2", Type = WorkspaceType.HotDesk, Capacity = 1, PricePerHour = 15.00m, IsActive = true },
-        new Workspace { Id = Guid.Parse("b2b2b2b2-0000-0000-0000-000000000001"), Name = "Meeting Room Krakow", Type = WorkspaceType.MeetingRoom, Capacity = 8, PricePerHour = 60.00m, IsActive = true },
-        new Workspace { Id = Guid.Parse("b2b2b2b2-0000-0000-0000-000000000002"), Name = "Meeting Room Warsaw", Type = WorkspaceType.MeetingRoom, Capacity = 4, PricePerHour = 40.00m, IsActive = true },
-        new Workspace { Id = Guid.Parse("c3c3c3c3-0000-0000-0000-000000000001"), Name = "Private Office 1", Type = WorkspaceType.Office, Capacity = 3, PricePerHour = 90.00m, IsActive = true },
-        new Workspace { Id = Guid.Parse("c3c3c3c3-0000-0000-0000-000000000002"), Name = "Private Office 2", Type = WorkspaceType.Office, Capacity = 5, PricePerHour = 120.00m, IsActive = true }
+        new Workspace { Id = Guid.Parse("a1a1a1a1-0000-0000-0000-000000000001"), Name = "Hot Desk A1", Type = WorkspaceType.HotDesk, Capacity = 1, PricePerHour = 15.00m, IsActive = true, City = "Kraków", Street = "Rynek Główny", BuildingNumber = "1", Floor = 1 },
+        new Workspace { Id = Guid.Parse("a1a1a1a1-0000-0000-0000-000000000002"), Name = "Hot Desk A2", Type = WorkspaceType.HotDesk, Capacity = 1, PricePerHour = 15.00m, IsActive = true, City = "Kraków", Street = "Rynek Główny", BuildingNumber = "1", Floor = 1 },
+        new Workspace { Id = Guid.Parse("b2b2b2b2-0000-0000-0000-000000000001"), Name = "Meeting Room Krakow", Type = WorkspaceType.MeetingRoom, Capacity = 8, PricePerHour = 60.00m, IsActive = true, City = "Kraków", Street = "Długa", BuildingNumber = "10", Floor = 2 },
+        new Workspace { Id = Guid.Parse("b2b2b2b2-0000-0000-0000-000000000002"), Name = "Meeting Room Warsaw", Type = WorkspaceType.MeetingRoom, Capacity = 4, PricePerHour = 40.00m, IsActive = true, City = "Warszawa", Street = "Marszałkowska", BuildingNumber = "100", Floor = 3 },
+        new Workspace { Id = Guid.Parse("c3c3c3c3-0000-0000-0000-000000000001"), Name = "Private Office 1", Type = WorkspaceType.Office, Capacity = 3, PricePerHour = 90.00m, IsActive = true, City = "Kraków", Street = "Grodzka", BuildingNumber = "5", Floor = 2 },
+        new Workspace { Id = Guid.Parse("c3c3c3c3-0000-0000-0000-000000000002"), Name = "Private Office 2", Type = WorkspaceType.Office, Capacity = 5, PricePerHour = 120.00m, IsActive = true, City = "Kraków", Street = "Grodzka", BuildingNumber = "5", Floor = 3 }
     ];
 }

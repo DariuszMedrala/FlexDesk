@@ -58,7 +58,17 @@ public class WorkspaceService : IWorkspaceService
             .OrderBy(w => w.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(w => new WorkspaceDto(w.Id, w.Name, w.Type, w.Capacity, w.PricePerHour, w.IsActive))
+            .Select(w => new WorkspaceDto(
+                w.Id,
+                w.Name,
+                w.Type,
+                w.Capacity,
+                w.PricePerHour,
+                w.IsActive,
+                w.City,
+                w.Street,
+                w.BuildingNumber,
+                w.Floor))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<WorkspaceDto>(items, page, pageSize, totalCount);
@@ -85,7 +95,11 @@ public class WorkspaceService : IWorkspaceService
             Type = request.Type,
             Capacity = request.Capacity,
             PricePerHour = request.PricePerHour,
-            IsActive = true
+            IsActive = true,
+            City = request.City,
+            Street = request.Street,
+            BuildingNumber = request.BuildingNumber,
+            Floor = request.Floor
         };
 
         _context.Workspaces.Add(workspace);
@@ -107,6 +121,10 @@ public class WorkspaceService : IWorkspaceService
         workspace.Capacity = request.Capacity;
         workspace.PricePerHour = request.PricePerHour;
         workspace.IsActive = request.IsActive;
+        workspace.City = request.City;
+        workspace.Street = request.Street;
+        workspace.BuildingNumber = request.BuildingNumber;
+        workspace.Floor = request.Floor;
 
         await _context.SaveChangesAsync(cancellationToken);
 

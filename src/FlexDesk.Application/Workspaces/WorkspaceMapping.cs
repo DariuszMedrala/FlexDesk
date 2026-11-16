@@ -12,5 +12,9 @@ public static class WorkspaceMapping
             workspace.Type,
             workspace.Capacity,
             workspace.PricePerHour,
-            workspace.IsActive);
+            workspace.IsActive,
+            workspace.City,
+            workspace.Street,
+            workspace.BuildingNumber,
+            workspace.Floor);
 }

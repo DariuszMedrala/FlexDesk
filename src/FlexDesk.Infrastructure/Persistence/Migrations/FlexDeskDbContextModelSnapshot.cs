@@ -211,9 +211,25 @@ namespace FlexDesk.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("BuildingNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("building_number");
+
                     b.Property<int>("Capacity")
                         .HasColumnType("integer")
                         .HasColumnName("capacity");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("city");
+
+                    b.Property<int>("Floor")
+                        .HasColumnType("integer")
+                        .HasColumnName("floor");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -229,6 +245,12 @@ namespace FlexDesk.Infrastructure.Persistence.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
                         .HasColumnName("price_per_hour");
+
+                    b.Property<string>("Street")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("street");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -251,55 +273,79 @@ namespace FlexDesk.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = new Guid("a1a1a1a1-0000-0000-0000-000000000001"),
+                            BuildingNumber = "1",
                             Capacity = 1,
+                            City = "Kraków",
+                            Floor = 1,
                             IsActive = true,
                             Name = "Hot Desk A1",
                             PricePerHour = 15.00m,
+                            Street = "Rynek Główny",
                             Type = "HotDesk"
                         },
                         new
                         {
                             Id = new Guid("a1a1a1a1-0000-0000-0000-000000000002"),
+                            BuildingNumber = "1",
                             Capacity = 1,
+                            City = "Kraków",
+                            Floor = 1,
                             IsActive = true,
                             Name = "Hot Desk A2",
                             PricePerHour = 15.00m,
+                            Street = "Rynek Główny",
                             Type = "HotDesk"
                         },
                         new
                         {
                             Id = new Guid("b2b2b2b2-0000-0000-0000-000000000001"),
+                            BuildingNumber = "10",
                             Capacity = 8,
+                            City = "Kraków",
+                            Floor = 2,
                             IsActive = true,
                             Name = "Meeting Room Krakow",
                             PricePerHour = 60.00m,
+                            Street = "Długa",
                             Type = "MeetingRoom"
                         },
                         new
                         {
                             Id = new Guid("b2b2b2b2-0000-0000-0000-000000000002"),
+                            BuildingNumber = "100",
                             Capacity = 4,
+                            City = "Warszawa",
+                            Floor = 3,
                             IsActive = true,
                             Name = "Meeting Room Warsaw",
                             PricePerHour = 40.00m,
+                            Street = "Marszałkowska",
                             Type = "MeetingRoom"
                         },
                         new
                         {
                             Id = new Guid("c3c3c3c3-0000-0000-0000-000000000001"),
+                            BuildingNumber = "5",
                             Capacity = 3,
+                            City = "Kraków",
+                            Floor = 2,
                             IsActive = true,
                             Name = "Private Office 1",
                             PricePerHour = 90.00m,
+                            Street = "Grodzka",
                             Type = "Office"
                         },
                         new
                         {
                             Id = new Guid("c3c3c3c3-0000-0000-0000-000000000002"),
+                            BuildingNumber = "5",
                             Capacity = 5,
+                            City = "Kraków",
+                            Floor = 3,
                             IsActive = true,
                             Name = "Private Office 2",
                             PricePerHour = 120.00m,
+                            Street = "Grodzka",
                             Type = "Office"
                         });
                 });

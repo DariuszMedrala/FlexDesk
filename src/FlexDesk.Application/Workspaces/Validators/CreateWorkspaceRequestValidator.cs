@@ -19,5 +19,20 @@ public class CreateWorkspaceRequestValidator : AbstractValidator<CreateWorkspace
 
         RuleFor(x => x.PricePerHour)
             .GreaterThan(0);
+
+        RuleFor(x => x.City)
+            .NotEmpty()
+            .MaximumLength(100);
+
+        RuleFor(x => x.Street)
+            .NotEmpty()
+            .MaximumLength(150);
+
+        RuleFor(x => x.BuildingNumber)
+            .NotEmpty()
+            .MaximumLength(20);
+
+        RuleFor(x => x.Floor)
+            .InclusiveBetween(-5, 200);
     }
 }

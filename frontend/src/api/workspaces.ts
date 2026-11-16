@@ -15,6 +15,10 @@ export interface WorkspaceInput {
   capacity: number
   pricePerHour: number
   isActive?: boolean
+  city: string
+  street: string
+  buildingNumber: string
+  floor: number
 }
 
 function buildQuery(query: WorkspaceQuery): string {

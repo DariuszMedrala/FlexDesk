@@ -12,9 +12,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: '/workspaces', label: 'Workspaces', icon: LayoutGrid },
-  { to: '/reservations', label: 'Reservations', icon: CalendarCheck },
-  { to: '/incidents', label: 'Incidents', icon: TriangleAlert },
+  { to: '/workspaces', label: 'Przestrzenie', icon: LayoutGrid },
+  { to: '/reservations', label: 'Rezerwacje', icon: CalendarCheck },
+  { to: '/incidents', label: 'Zgłoszenia', icon: TriangleAlert },
 ]
 
 function BrandMark() {

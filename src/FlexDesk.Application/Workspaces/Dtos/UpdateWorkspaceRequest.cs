@@ -7,4 +7,8 @@ public record UpdateWorkspaceRequest(
     WorkspaceType Type,
     int Capacity,
     decimal PricePerHour,
-    bool IsActive);
+    bool IsActive,
+    string City,
+    string Street,
+    string BuildingNumber,
+    int Floor);

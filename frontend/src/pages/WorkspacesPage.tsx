@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarPlus,
   LayoutGrid,
+  MapPin,
   Monitor,
   Pencil,
   Plus,
@@ -30,18 +31,32 @@ import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { Select } from '../components/ui/Select'
 import { PageLoader } from '../components/ui/Spinner'
+import { Switch } from '../components/ui/Switch'
+import { cn } from '../lib/cn'
 import { getErrorMessage } from '../lib/errors'
 import { useToast } from '../toast/ToastContext'
 import type { PagedResult, Workspace, WorkspaceType } from '../types/models'
 
+interface TypeMeta {
+  label: string
+  icon: LucideIcon
+  iconClass: string
+  accent: string
+}
+
+const typeMeta: Record<WorkspaceType, TypeMeta> = {
+  HotDesk: { label: 'Biurko', icon: Monitor, iconClass: 'bg-blue-500/10 text-blue-500', accent: 'border-l-blue-500' },
+  MeetingRoom: {
+    label: 'Sala konferencyjna',
+    icon: Users,
+    iconClass: 'bg-amber-500/10 text-amber-500',
+    accent: 'border-l-amber-500',
+  },
+  Office: { label: 'Gabinet', icon: Building2, iconClass: 'bg-emerald-500/10 text-emerald-500', accent: 'border-l-emerald-500' },
+}
+
 const WORKSPACE_TYPES: WorkspaceType[] = ['HotDesk', 'MeetingRoom', 'Office']
 const PAGE_SIZE = 6
-
-const typeIcon: Record<WorkspaceType, LucideIcon> = {
-  HotDesk: Monitor,
-  MeetingRoom: Users,
-  Office: Building2,
-}
 
 const emptyForm: WorkspaceInput = {
   name: '',
@@ -49,6 +64,18 @@ const emptyForm: WorkspaceInput = {
   capacity: 1,
   pricePerHour: 10,
   isActive: true,
+  city: '',
+  street: '',
+  buildingNumber: '',
+  floor: 0,
+}
+
+function floorLabel(floor: number): string {
+  return floor === 0 ? 'parter' : `piętro ${floor}`
+}
+
+function locationLine(workspace: Workspace): string {
+  return `${workspace.city}, ul. ${workspace.street} ${workspace.buildingNumber} · ${floorLabel(workspace.floor)}`
 }
 
 function previewPrice(pricePerHour: number, start: string, end: string): number | null {
@@ -114,6 +141,10 @@ export function WorkspacesPage() {
       capacity: workspace.capacity,
       pricePerHour: workspace.pricePerHour,
       isActive: workspace.isActive,
+      city: workspace.city,
+      street: workspace.street,
+      buildingNumber: workspace.buildingNumber,
+      floor: workspace.floor,
     })
     setFormModal({ workspace })
   }
@@ -164,7 +195,7 @@ export function WorkspacesPage() {
         startTime: new Date(reserveStart).toISOString(),
         endTime: new Date(reserveEnd).toISOString(),
       })
-      toast.success('Rezerwacja utworzona. Opłać ją w zakładce Reservations.')
+      toast.success('Rezerwacja utworzona. Opłać ją w zakładce Rezerwacje.')
       setReserveTarget(null)
       setReserveStart('')
       setReserveEnd('')
@@ -182,7 +213,11 @@ export function WorkspacesPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-fg">Przestrzenie</h1>
-          <p className="mt-1 text-sm text-muted">Przeglądaj dostępne przestrzenie i rezerwuj je.</p>
+          <p className="mt-1 text-sm text-muted">
+            {isAdmin
+              ? 'Twórz, edytuj i dezaktywuj przestrzenie w katalogu.'
+              : 'Przeglądaj dostępne przestrzenie i rezerwuj je.'}
+          </p>
         </div>
         {isAdmin && (
           <Button onClick={openCreate}>
@@ -203,14 +238,14 @@ export function WorkspacesPage() {
           />
         </div>
         <Select
-          className="sm:w-44"
+          className="sm:w-48"
           value={query.type}
           onChange={(event) => setQuery({ ...query, page: 1, type: event.target.value as WorkspaceType | '' })}
         >
           <option value="">Wszystkie typy</option>
           {WORKSPACE_TYPES.map((type) => (
             <option key={type} value={type}>
-              {type}
+              {typeMeta[type].label}
             </option>
           ))}
         </Select>
@@ -232,11 +267,12 @@ export function WorkspacesPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.items.map((workspace) => {
-              const Icon = typeIcon[workspace.type]
+              const meta = typeMeta[workspace.type]
+              const Icon = meta.icon
               return (
-                <Card key={workspace.id} className="flex flex-col p-5">
+                <Card key={workspace.id} className={cn('flex flex-col border-l-4 p-5', meta.accent)}>
                   <div className="flex items-start justify-between">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-surface-2 text-primary">
+                    <div className={cn('flex size-10 items-center justify-center rounded-lg', meta.iconClass)}>
                       <Icon size={20} />
                     </div>
                     <Badge tone={workspace.isActive ? 'success' : 'neutral'}>
@@ -244,7 +280,11 @@ export function WorkspacesPage() {
                     </Badge>
                   </div>
                   <h3 className="mt-4 font-semibold text-fg">{workspace.name}</h3>
-                  <p className="text-sm text-muted">{workspace.type}</p>
+                  <p className="text-sm text-muted">{meta.label}</p>
+                  <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
+                    <MapPin size={14} className="mt-0.5 shrink-0" />
+                    {locationLine(workspace)}
+                  </p>
                   <div className="mt-4 flex items-center justify-between text-sm">
                     <span className="flex items-center gap-1.5 text-muted">
                       <Users size={15} />
@@ -253,7 +293,7 @@ export function WorkspacesPage() {
                     <span className="font-medium text-fg">{workspace.pricePerHour.toFixed(2)} / h</span>
                   </div>
                   <div className="mt-5 flex gap-2 border-t border-border pt-4">
-                    {workspace.isActive && (
+                    {!isAdmin && workspace.isActive && (
                       <Button
                         size="sm"
                         className="flex-1"
@@ -269,8 +309,9 @@ export function WorkspacesPage() {
                     )}
                     {isAdmin && (
                       <>
-                        <Button size="sm" variant="secondary" onClick={() => openEdit(workspace)} aria-label="Edytuj">
+                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => openEdit(workspace)}>
                           <Pencil size={15} />
+                          Edytuj
                         </Button>
                         <Button size="sm" variant="danger" onClick={() => setDeleteTarget(workspace)} aria-label="Usuń">
                           <Trash2 size={15} />
@@ -331,7 +372,7 @@ export function WorkspacesPage() {
               <Select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as WorkspaceType })}>
                 {WORKSPACE_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {typeMeta[type].label}
                   </option>
                 ))}
               </Select>
@@ -346,25 +387,48 @@ export function WorkspacesPage() {
               />
             </Field>
           </div>
-          <Field label="Cena za godzinę">
-            <Input
-              type="number"
-              min={0}
-              step={0.5}
-              value={form.pricePerHour}
-              onChange={(event) => setForm({ ...form, pricePerHour: Number(event.target.value) })}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Cena za godzinę">
+              <Input
+                type="number"
+                min={0}
+                step={0.5}
+                value={form.pricePerHour}
+                onChange={(event) => setForm({ ...form, pricePerHour: Number(event.target.value) })}
+                required
+              />
+            </Field>
+            <Field label="Piętro">
+              <Input
+                type="number"
+                value={form.floor}
+                onChange={(event) => setForm({ ...form, floor: Number(event.target.value) })}
+                required
+              />
+            </Field>
+          </div>
+          <Field label="Miasto">
+            <Input value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} required />
           </Field>
-          <label className="flex items-center gap-2 text-sm text-fg">
-            <input
-              type="checkbox"
-              className="size-4 accent-[var(--color-primary)]"
+          <div className="grid grid-cols-[1fr_120px] gap-4">
+            <Field label="Ulica">
+              <Input value={form.street} onChange={(event) => setForm({ ...form, street: event.target.value })} required />
+            </Field>
+            <Field label="Nr budynku">
+              <Input
+                value={form.buildingNumber}
+                onChange={(event) => setForm({ ...form, buildingNumber: event.target.value })}
+                required
+              />
+            </Field>
+          </div>
+          <div className="pt-1">
+            <Switch
               checked={form.isActive ?? true}
-              onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+              onChange={(checked) => setForm({ ...form, isActive: checked })}
+              label="Aktywna"
             />
-            Aktywna
-          </label>
+          </div>
           <div className="mt-2 flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setFormModal(null)}>
               Anuluj
@@ -380,7 +444,7 @@ export function WorkspacesPage() {
         open={reserveTarget !== null}
         onClose={() => setReserveTarget(null)}
         title="Rezerwuj przestrzeń"
-        description={reserveTarget?.name}
+        description={reserveTarget ? `${reserveTarget.name} · ${locationLine(reserveTarget)}` : undefined}
       >
         <form onSubmit={handleReserve} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

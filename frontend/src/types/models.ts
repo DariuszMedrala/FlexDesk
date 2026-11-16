@@ -11,6 +11,10 @@ export interface Workspace {
   capacity: number
   pricePerHour: number
   isActive: boolean
+  city: string
+  street: string
+  buildingNumber: string
+  floor: number
 }
 
 export interface PagedResult<T> {

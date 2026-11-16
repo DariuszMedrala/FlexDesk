@@ -10,6 +10,10 @@ public class Workspace
     public int Capacity { get; set; }
     public decimal PricePerHour { get; set; }
     public bool IsActive { get; set; } = true;
+    public string City { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    public string BuildingNumber { get; set; } = string.Empty;
+    public int Floor { get; set; }
 
     public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     public ICollection<Incident> Incidents { get; set; } = new List<Incident>();

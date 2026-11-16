@@ -65,7 +65,11 @@ public class WorkspacesApiTests : IntegrationTestBase
             name = "Admin Created Desk",
             type = "HotDesk",
             capacity = 2,
-            pricePerHour = 18.5
+            pricePerHour = 18.5,
+            city = "Kraków",
+            street = "Floriańska",
+            buildingNumber = "7",
+            floor = 1,
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
