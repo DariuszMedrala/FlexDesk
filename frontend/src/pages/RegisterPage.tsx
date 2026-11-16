@@ -34,17 +34,25 @@ export function RegisterPage() {
   return (
     <AuthLayout>
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-fg">Utwórz konto</h2>
-        <p className="mt-1 text-sm text-muted">Zacznij rezerwować przestrzenie w FlexDesk.</p>
+        <h2 className="text-3xl font-semibold tracking-tight text-fg">Utwórz konto</h2>
+        <p className="mt-2 text-base text-muted">Zacznij rezerwować przestrzenie w FlexDesk.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field label="Email">
-          <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <Field label="Email" className="text-[0.95rem]">
+          <Input
+            type="email"
+            className="h-12 text-base"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+          />
         </Field>
-        <Field label="Hasło (min. 8 znaków)">
+        <Field label="Hasło (min. 8 znaków)" className="text-[0.95rem]">
           <Input
             type="password"
+            className="h-12 text-base"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             minLength={8}
@@ -52,12 +60,12 @@ export function RegisterPage() {
             autoComplete="new-password"
           />
         </Field>
-        <Button type="submit" disabled={busy} className="mt-2 w-full">
+        <Button type="submit" disabled={busy} className="mt-2 h-12 w-full text-base">
           {busy ? 'Tworzenie…' : 'Utwórz konto'}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className="mt-8 text-center text-base text-muted">
         Masz już konto?{' '}
         <Link to="/login" className="font-medium text-primary hover:underline">
           Zaloguj się
