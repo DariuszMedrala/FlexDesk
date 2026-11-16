@@ -7,6 +7,7 @@ public record IncidentDto(
     Guid WorkspaceId,
     string WorkspaceName,
     Guid UserId,
+    string UserFullName,
     string Description,
     IncidentStatus Status,
     DateTime CreatedAt,

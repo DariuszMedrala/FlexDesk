@@ -11,6 +11,7 @@ public static class IncidentMapping
             incident.WorkspaceId,
             incident.Workspace.Name,
             incident.UserId,
+            $"{incident.User.FirstName} {incident.User.LastName}",
             incident.Description,
             incident.Status,
             incident.CreatedAt,

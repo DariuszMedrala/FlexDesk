@@ -1,4 +1,4 @@
-import { CalendarCheck, LayoutGrid, LogOut, Moon, Sun, TriangleAlert } from 'lucide-react'
+import { CalendarCheck, LayoutGrid, LogOut, Moon, Sun, TriangleAlert, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -17,6 +17,8 @@ const navItems: NavItem[] = [
   { to: '/incidents', label: 'Zgłoszenia', icon: TriangleAlert },
 ]
 
+const adminNavItems: NavItem[] = [{ to: '/users', label: 'Użytkownicy', icon: Users }]
+
 function BrandMark() {
   return (
     <div className="flex items-center gap-2 px-2">
@@ -28,14 +30,13 @@ function BrandMark() {
   )
 }
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavItems({ items }: { items: NavItem[] }) {
   return (
     <>
-      {navItems.map(({ to, label, icon: Icon }) => (
+      {items.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
-          onClick={onNavigate}
           className={({ isActive }) =>
             cn(
               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -61,6 +62,8 @@ export function Layout() {
     navigate('/login')
   }
 
+  const navLinks = isAdmin ? [...navItems, ...adminNavItems] : navItems
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface md:flex">
@@ -68,7 +71,7 @@ export function Layout() {
           <BrandMark />
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          <NavItems />
+          <NavItems items={navLinks} />
         </nav>
       </aside>
 
@@ -103,7 +106,7 @@ export function Layout() {
         </header>
 
         <nav className="flex gap-1 border-b border-border bg-surface px-3 py-2 md:hidden">
-          <NavItems />
+          <NavItems items={navLinks} />
         </nav>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8">

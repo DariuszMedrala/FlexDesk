@@ -52,10 +52,20 @@ export interface Incident {
   workspaceId: string
   workspaceName: string
   userId: string
+  userFullName: string
   description: string
   status: IncidentStatus
   createdAt: string
   resolvedAt: string | null
+}
+
+export interface User {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: UserRole
+  createdAt: string
 }
 
 export interface AuthResponse {

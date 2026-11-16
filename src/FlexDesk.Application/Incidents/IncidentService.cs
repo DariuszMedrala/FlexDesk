@@ -49,6 +49,7 @@ public class IncidentService : IIncidentService
                 i.WorkspaceId,
                 i.Workspace.Name,
                 i.UserId,
+                i.User.FirstName + " " + i.User.LastName,
                 i.Description,
                 i.Status,
                 i.CreatedAt,
@@ -61,6 +62,7 @@ public class IncidentService : IIncidentService
         var incident = await _context.Incidents
             .AsNoTracking()
             .Include(i => i.Workspace)
+            .Include(i => i.User)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
             ?? throw NotFoundException.For(nameof(Incident), id);
 
@@ -75,9 +77,29 @@ public class IncidentService : IIncidentService
 
         var userId = RequireUserId();
 
+        if (_currentUser.IsAdmin)
+        {
+            throw new ForbiddenException("Administrators cannot report incidents.");
+        }
+
         var workspace = await _context.Workspaces
             .FirstOrDefaultAsync(w => w.Id == request.WorkspaceId, cancellationToken)
             ?? throw NotFoundException.For(nameof(Workspace), request.WorkspaceId);
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+        var hasStartedReservation = await _context.Reservations.AnyAsync(
+            r => r.UserId == userId
+                && r.WorkspaceId == workspace.Id
+                && r.Status != ReservationStatus.Cancelled
+                && r.StartTime <= now,
+            cancellationToken);
+
+        if (!hasStartedReservation)
+        {
+            throw new BusinessRuleException(
+                "You can report an issue only for a space you have reserved, and only after your reservation has started.");
+        }
 
         var incident = new Incident
         {
@@ -86,13 +108,14 @@ public class IncidentService : IIncidentService
             UserId = userId,
             Description = request.Description,
             Status = IncidentStatus.Reported,
-            CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
+            CreatedAt = now
         };
 
         _context.Incidents.Add(incident);
         await _context.SaveChangesAsync(cancellationToken);
 
         incident.Workspace = workspace;
+        incident.User = await _context.Users.FirstAsync(u => u.Id == userId, cancellationToken);
         return incident.ToDto();
     }
 
@@ -102,6 +125,7 @@ public class IncidentService : IIncidentService
 
         var incident = await _context.Incidents
             .Include(i => i.Workspace)
+            .Include(i => i.User)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
             ?? throw NotFoundException.For(nameof(Incident), id);
 

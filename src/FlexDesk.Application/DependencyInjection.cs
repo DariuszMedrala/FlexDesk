@@ -3,6 +3,7 @@ using System.Reflection;
 using FlexDesk.Application.Authentication;
 using FlexDesk.Application.Incidents;
 using FlexDesk.Application.Reservations;
+using FlexDesk.Application.Users;
 using FlexDesk.Application.Workspaces;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<IIncidentService, IncidentService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }
