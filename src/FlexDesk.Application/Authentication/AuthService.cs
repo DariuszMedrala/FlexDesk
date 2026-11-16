@@ -50,6 +50,8 @@ public class AuthService : IAuthService
             Id = Guid.CreateVersion7(),
             Email = normalizedEmail,
             PasswordHash = _passwordHasher.Hash(request.Password),
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
             Role = UserRole.User,
             CreatedAt = DateTime.UtcNow
         };
@@ -80,6 +82,12 @@ public class AuthService : IAuthService
     private AuthResponse CreateResponse(User user)
     {
         var token = _tokenGenerator.Generate(user);
-        return new AuthResponse(token.Value, token.ExpiresAtUtc, user.Email, user.Role.ToString());
+        return new AuthResponse(
+            token.Value,
+            token.ExpiresAtUtc,
+            user.Email,
+            user.Role.ToString(),
+            user.FirstName,
+            user.LastName);
     }
 }

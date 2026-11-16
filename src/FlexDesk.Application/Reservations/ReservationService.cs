@@ -57,7 +57,7 @@ public class ReservationService : IReservationService
                 r.WorkspaceId,
                 r.Workspace.Name,
                 r.UserId,
-                r.User.Email,
+                r.User.FirstName + " " + r.User.LastName,
                 r.StartTime,
                 r.EndTime,
                 r.TotalPrice,
@@ -139,17 +139,9 @@ public class ReservationService : IReservationService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ReservationDto(
-            reservation.Id,
-            reservation.WorkspaceId,
-            workspace.Name,
-            reservation.UserId,
-            _currentUser.Email ?? string.Empty,
-            reservation.StartTime,
-            reservation.EndTime,
-            reservation.TotalPrice,
-            reservation.Status,
-            reservation.CreatedAt);
+        reservation.Workspace = workspace;
+        reservation.User = await _context.Users.FirstAsync(u => u.Id == userId, cancellationToken);
+        return reservation.ToDto();
     }
 
     public async Task<PaymentDto> PayAsync(Guid id, PayReservationRequest request, CancellationToken cancellationToken = default)

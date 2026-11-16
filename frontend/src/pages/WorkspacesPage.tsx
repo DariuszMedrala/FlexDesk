@@ -52,7 +52,7 @@ const typeMeta: Record<WorkspaceType, TypeMeta> = {
     iconClass: 'bg-amber-500/10 text-amber-500',
     accent: 'border-l-amber-500',
   },
-  Office: { label: 'Gabinet', icon: Building2, iconClass: 'bg-emerald-500/10 text-emerald-500', accent: 'border-l-emerald-500' },
+  Office: { label: 'Biuro', icon: Building2, iconClass: 'bg-emerald-500/10 text-emerald-500', accent: 'border-l-emerald-500' },
 }
 
 const WORKSPACE_TYPES: WorkspaceType[] = ['HotDesk', 'MeetingRoom', 'Office']

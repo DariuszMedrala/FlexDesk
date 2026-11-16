@@ -13,6 +13,8 @@ export function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -21,7 +23,7 @@ export function RegisterPage() {
     event.preventDefault()
     setBusy(true)
     try {
-      await register(email, password)
+      await register(email, password, firstName, lastName)
       toast.success('Konto utworzone. Witaj w FlexDesk!')
       navigate('/workspaces')
     } catch (error) {
@@ -39,6 +41,26 @@ export function RegisterPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Imię" className="text-[0.95rem]">
+            <Input
+              className="h-12 text-base"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              required
+              autoComplete="given-name"
+            />
+          </Field>
+          <Field label="Nazwisko" className="text-[0.95rem]">
+            <Input
+              className="h-12 text-base"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              required
+              autoComplete="family-name"
+            />
+          </Field>
+        </div>
         <Field label="Email" className="text-[0.95rem]">
           <Input
             type="email"

@@ -7,13 +7,16 @@ import type { AuthResponse, UserRole } from '../types/models'
 interface AuthUser {
   email: string
   role: UserRole
+  firstName: string
+  lastName: string
+  fullName: string
 }
 
 interface AuthContextValue {
   user: AuthUser | null
   isAdmin: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>
   logout: () => void
 }
 
@@ -48,10 +51,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return {
-      user: auth ? { email: auth.email, role: auth.role } : null,
+      user: auth
+        ? {
+            email: auth.email,
+            role: auth.role,
+            firstName: auth.firstName,
+            lastName: auth.lastName,
+            fullName: `${auth.firstName} ${auth.lastName}`.trim(),
+          }
+        : null,
       isAdmin: auth?.role === 'Admin',
       login: async (email, password) => persist(await authApi.login(email, password)),
-      register: async (email, password) => persist(await authApi.register(email, password)),
+      register: async (email, password, firstName, lastName) =>
+        persist(await authApi.register(email, password, firstName, lastName)),
       logout: () => {
         localStorage.removeItem(AUTH_STORAGE_KEY)
         setAuth(null)

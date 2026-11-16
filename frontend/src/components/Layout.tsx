@@ -88,8 +88,8 @@ export function Layout() {
           </button>
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-fg">{user?.email}</p>
-              <p className="text-xs text-muted">{isAdmin ? 'Administrator' : 'User'}</p>
+              <p className="text-sm font-medium text-fg">{user?.fullName}</p>
+              <p className="text-xs text-muted">{isAdmin ? 'Administrator' : 'Użytkownik'}</p>
             </div>
             <button
               type="button"

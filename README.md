@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/DariuszMedrala/FlexDesk/actions/workflows/ci.yml/badge.svg)
 
-FlexDesk to pełna aplikacja webowa (backend REST API + frontend + baza danych) do zarządzania przestrzenią biura co-workingowego: rezerwacji biurek, sal konferencyjnych i prywatnych gabinetów wraz z płatnościami i zgłaszaniem usterek.
+FlexDesk to pełna aplikacja webowa (backend REST API + frontend + baza danych) do zarządzania przestrzenią biura co-workingowego: rezerwacji biurek, sal konferencyjnych i prywatnych biur wraz z płatnościami i zgłaszaniem usterek.
 
 ---
 

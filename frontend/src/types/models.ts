@@ -30,7 +30,7 @@ export interface Reservation {
   workspaceId: string
   workspaceName: string
   userId: string
-  userEmail: string
+  userFullName: string
   startTime: string
   endTime: string
   totalPrice: number
@@ -63,4 +63,6 @@ export interface AuthResponse {
   expiresAtUtc: string
   email: string
   role: UserRole
+  firstName: string
+  lastName: string
 }

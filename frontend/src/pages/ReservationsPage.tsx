@@ -38,6 +38,8 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: 'Cancelled', label: 'Anulowane' },
 ]
 
+const PAGE_SIZE = 8
+
 function formatDate(value: string): string {
   return new Date(value).toLocaleString()
 }
@@ -65,6 +67,7 @@ export function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<StatusFilter>('All')
+  const [page, setPage] = useState(1)
 
   const [payTarget, setPayTarget] = useState<Reservation | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('Card')
@@ -91,6 +94,10 @@ export function ReservationsPage() {
     const filtered = filter === 'All' ? reservations : reservations.filter((item) => item.status === filter)
     return sortByUpcoming(filtered)
   }, [reservations, filter])
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   async function handlePay() {
     if (!payTarget) {
@@ -137,7 +144,10 @@ export function ReservationsPage() {
           <button
             key={item.value}
             type="button"
-            onClick={() => setFilter(item.value)}
+            onClick={() => {
+              setFilter(item.value)
+              setPage(1)
+            }}
             className={cn(
               'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
               filter === item.value
@@ -161,7 +171,8 @@ export function ReservationsPage() {
           />
         </Card>
       ) : (
-        <Card className="overflow-x-auto">
+        <>
+          <Card className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs font-medium text-muted">
@@ -175,10 +186,10 @@ export function ReservationsPage() {
               </tr>
             </thead>
             <tbody>
-              {visible.map((reservation) => (
+              {pageItems.map((reservation) => (
                 <tr key={reservation.id} className="border-b border-border last:border-0">
                   <td className="px-5 py-3 font-medium text-fg">{reservation.workspaceName}</td>
-                  {isAdmin && <td className="px-5 py-3 text-muted">{reservation.userEmail}</td>}
+                  {isAdmin && <td className="px-5 py-3 text-muted">{reservation.userFullName}</td>}
                   <td className="px-5 py-3 text-muted">{formatDate(reservation.startTime)}</td>
                   <td className="px-5 py-3 text-muted">{formatDate(reservation.endTime)}</td>
                   <td className="px-5 py-3 text-fg">{reservation.totalPrice.toFixed(2)}</td>
@@ -209,7 +220,22 @@ export function ReservationsPage() {
               ))}
             </tbody>
           </table>
-        </Card>
+          </Card>
+
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted">
+              Strona {safePage} z {totalPages} · {visible.length} wyników
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+                Poprzednia
+              </Button>
+              <Button size="sm" variant="secondary" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)}>
+                Następna
+              </Button>
+            </div>
+          </div>
+        </>
       )}
 
       <Modal

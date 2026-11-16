@@ -28,6 +28,8 @@ public class DatabaseSeeder
             Id = Guid.CreateVersion7(),
             Email = "admin@flexdesk.local",
             PasswordHash = _passwordHasher.Hash("Admin123!"),
+            FirstName = "Anna",
+            LastName = "Administratorska",
             Role = UserRole.Admin,
             CreatedAt = DateTime.UtcNow
         };
@@ -37,6 +39,8 @@ public class DatabaseSeeder
             Id = Guid.CreateVersion7(),
             Email = "user@flexdesk.local",
             PasswordHash = _passwordHasher.Hash("User123!"),
+            FirstName = "Jan",
+            LastName = "Kowalski",
             Role = UserRole.User,
             CreatedAt = DateTime.UtcNow
         };

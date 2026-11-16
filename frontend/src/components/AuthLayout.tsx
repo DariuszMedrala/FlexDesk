@@ -3,7 +3,7 @@ import { CalendarCheck, LayoutGrid, Mail, Moon, ShieldCheck, Sun } from 'lucide-
 import { useTheme } from '../theme/ThemeContext'
 
 const highlights = [
-  { icon: LayoutGrid, title: 'Rezerwuj w kilka sekund', text: 'Biurka, sale konferencyjne i prywatne gabinety w jednym miejscu.' },
+  { icon: LayoutGrid, title: 'Rezerwuj w kilka sekund', text: 'Biurka, sale konferencyjne i prywatne biura w jednym miejscu.' },
   { icon: CalendarCheck, title: 'Pełna kontrola', text: 'Opłacaj, przeglądaj i anuluj rezerwacje bez dzwonienia do recepcji.' },
   { icon: ShieldCheck, title: 'Bezpieczny dostęp', text: 'Uwierzytelnianie JWT i uprawnienia oparte na rolach.' },
   { icon: Mail, title: 'Potwierdzenia e-mail', text: 'Automatyczne powiadomienia po każdej opłaconej rezerwacji.' },
