@@ -44,7 +44,7 @@ Biura co-workingowe potrzebują systemu do zarządzania dostępnością przestrz
 | Walidacja | FluentValidation |
 | Asynchroniczność | RabbitMQ + .NET Hosted Service (konsument) |
 | E-mail | SMTP (MailHog w dev) |
-| Frontend | React 18 + TypeScript (Vite), React Router |
+| Frontend | React 18 + TypeScript (Vite), React Router, Tailwind CSS |
 | Testy | xUnit, Testcontainers (PostgreSQL) |
 | Konteneryzacja | Docker, Docker Compose |
 | CI | GitHub Actions |

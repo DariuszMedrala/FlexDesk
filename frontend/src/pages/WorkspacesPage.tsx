@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  Building2,
+  CalendarPlus,
+  LayoutGrid,
+  Monitor,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
-import { ErrorBanner } from '../components/ErrorBanner'
 import { createReservation } from '../api/reservations'
 import {
   createWorkspace,
@@ -10,10 +21,27 @@ import {
   updateWorkspace,
 } from '../api/workspaces'
 import type { WorkspaceInput, WorkspaceQuery } from '../api/workspaces'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import { EmptyState } from '../components/ui/EmptyState'
+import { Field } from '../components/ui/Field'
+import { Input } from '../components/ui/Input'
+import { Modal } from '../components/ui/Modal'
+import { Select } from '../components/ui/Select'
+import { PageLoader } from '../components/ui/Spinner'
+import { getErrorMessage } from '../lib/errors'
+import { useToast } from '../toast/ToastContext'
 import type { PagedResult, Workspace, WorkspaceType } from '../types/models'
 
 const WORKSPACE_TYPES: WorkspaceType[] = ['HotDesk', 'MeetingRoom', 'Office']
 const PAGE_SIZE = 6
+
+const typeIcon: Record<WorkspaceType, LucideIcon> = {
+  HotDesk: Monitor,
+  MeetingRoom: Users,
+  Office: Building2,
+}
 
 const emptyForm: WorkspaceInput = {
   name: '',
@@ -23,55 +51,63 @@ const emptyForm: WorkspaceInput = {
   isActive: true,
 }
 
+function previewPrice(pricePerHour: number, start: string, end: string): number | null {
+  if (!start || !end) {
+    return null
+  }
+  const startMs = new Date(start).getTime()
+  const endMs = new Date(end).getTime()
+  if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
+    return null
+  }
+  const hours = (endMs - startMs) / 3_600_000
+  let total = pricePerHour * hours
+  if (hours >= 8) {
+    total *= 0.9
+  }
+  return Math.round(total * 100) / 100
+}
+
 export function WorkspacesPage() {
   const { isAdmin } = useAuth()
+  const toast = useToast()
+
   const [query, setQuery] = useState<WorkspaceQuery>({ page: 1, pageSize: PAGE_SIZE, type: '', minCapacity: '', search: '' })
   const [data, setData] = useState<PagedResult<Workspace> | null>(null)
-  const [error, setError] = useState<unknown>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
+  const [formModal, setFormModal] = useState<{ workspace: Workspace | null } | null>(null)
   const [form, setForm] = useState<WorkspaceInput>(emptyForm)
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  const [reserveId, setReserveId] = useState<string | null>(null)
+  const [reserveTarget, setReserveTarget] = useState<Workspace | null>(null)
   const [reserveStart, setReserveStart] = useState('')
   const [reserveEnd, setReserveEnd] = useState('')
+  const [reserving, setReserving] = useState(false)
+
+  const [deleteTarget, setDeleteTarget] = useState<Workspace | null>(null)
 
   const load = useCallback(async () => {
-    setError(null)
+    setLoading(true)
     try {
       setData(await getWorkspaces(query))
-    } catch (loadError) {
-      setError(loadError)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setLoading(false)
     }
-  }, [query])
+  }, [query, toast])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  async function handleSaveWorkspace(event: FormEvent) {
-    event.preventDefault()
-    setError(null)
-    setNotice(null)
-    try {
-      if (editingId) {
-        await updateWorkspace(editingId, form)
-        setNotice('Workspace updated.')
-      } else {
-        await createWorkspace(form)
-        setNotice('Workspace created.')
-      }
-      setForm(emptyForm)
-      setEditingId(null)
-      await load()
-    } catch (saveError) {
-      setError(saveError)
-    }
+  function openCreate() {
+    setForm(emptyForm)
+    setFormModal({ workspace: null })
   }
 
-  function startEdit(workspace: Workspace) {
-    setEditingId(workspace.id)
+  function openEdit(workspace: Workspace) {
     setForm({
       name: workspace.name,
       type: workspace.type,
@@ -79,98 +115,239 @@ export function WorkspacesPage() {
       pricePerHour: workspace.pricePerHour,
       isActive: workspace.isActive,
     })
+    setFormModal({ workspace })
   }
 
-  async function handleDelete(id: string) {
-    setError(null)
-    setNotice(null)
+  async function handleSave(event: FormEvent) {
+    event.preventDefault()
+    setSaving(true)
     try {
-      await deleteWorkspace(id)
-      setNotice('Workspace deleted.')
+      if (formModal?.workspace) {
+        await updateWorkspace(formModal.workspace.id, form)
+        toast.success('Przestrzeń zaktualizowana.')
+      } else {
+        await createWorkspace(form)
+        toast.success('Przestrzeń utworzona.')
+      }
+      setFormModal(null)
       await load()
-    } catch (deleteError) {
-      setError(deleteError)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) {
+      return
+    }
+    try {
+      await deleteWorkspace(deleteTarget.id)
+      toast.success('Przestrzeń usunięta.')
+      setDeleteTarget(null)
+      await load()
+    } catch (error) {
+      toast.error(getErrorMessage(error))
     }
   }
 
   async function handleReserve(event: FormEvent) {
     event.preventDefault()
-    if (!reserveId) {
+    if (!reserveTarget) {
       return
     }
-    setError(null)
-    setNotice(null)
+    setReserving(true)
     try {
       await createReservation({
-        workspaceId: reserveId,
+        workspaceId: reserveTarget.id,
         startTime: new Date(reserveStart).toISOString(),
         endTime: new Date(reserveEnd).toISOString(),
       })
-      setNotice('Reservation created. Go to Reservations to pay.')
-      setReserveId(null)
+      toast.success('Rezerwacja utworzona. Opłać ją w zakładce Reservations.')
+      setReserveTarget(null)
       setReserveStart('')
       setReserveEnd('')
-    } catch (reserveError) {
-      setError(reserveError)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setReserving(false)
     }
   }
 
-  return (
-    <div>
-      <h1>Workspaces</h1>
-      <ErrorBanner error={error} />
-      {notice && <div className="banner banner-success">{notice}</div>}
+  const price = reserveTarget ? previewPrice(reserveTarget.pricePerHour, reserveStart, reserveEnd) : null
 
-      <form className="filters" onSubmit={(event) => event.preventDefault()}>
-        <input
-          placeholder="Search by name"
-          value={query.search ?? ''}
-          onChange={(event) => setQuery({ ...query, page: 1, search: event.target.value })}
-        />
-        <select value={query.type} onChange={(event) => setQuery({ ...query, page: 1, type: event.target.value as WorkspaceType | '' })}>
-          <option value="">All types</option>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-fg">Przestrzenie</h1>
+          <p className="mt-1 text-sm text-muted">Przeglądaj dostępne przestrzenie i rezerwuj je.</p>
+        </div>
+        {isAdmin && (
+          <Button onClick={openCreate}>
+            <Plus size={16} />
+            Nowa przestrzeń
+          </Button>
+        )}
+      </div>
+
+      <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
+          <Input
+            className="pl-9"
+            placeholder="Szukaj po nazwie"
+            value={query.search ?? ''}
+            onChange={(event) => setQuery({ ...query, page: 1, search: event.target.value })}
+          />
+        </div>
+        <Select
+          className="sm:w-44"
+          value={query.type}
+          onChange={(event) => setQuery({ ...query, page: 1, type: event.target.value as WorkspaceType | '' })}
+        >
+          <option value="">Wszystkie typy</option>
           {WORKSPACE_TYPES.map((type) => (
             <option key={type} value={type}>
               {type}
             </option>
           ))}
-        </select>
-        <input
+        </Select>
+        <Input
           type="number"
           min={1}
-          placeholder="Min capacity"
+          className="sm:w-36"
+          placeholder="Min. miejsc"
           value={query.minCapacity === '' ? '' : query.minCapacity}
           onChange={(event) =>
             setQuery({ ...query, page: 1, minCapacity: event.target.value === '' ? '' : Number(event.target.value) })
           }
         />
-      </form>
+      </Card>
 
-      {isAdmin && (
-        <form className="form card" onSubmit={handleSaveWorkspace}>
-          <h3>{editingId ? 'Edit workspace' : 'New workspace'}</h3>
-          <div className="form-row">
-            <input
-              placeholder="Name"
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-              required
-            />
-            <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as WorkspaceType })}>
-              {WORKSPACE_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              min={1}
-              value={form.capacity}
-              onChange={(event) => setForm({ ...form, capacity: Number(event.target.value) })}
-              required
-            />
-            <input
+      {loading ? (
+        <PageLoader />
+      ) : data && data.items.length > 0 ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {data.items.map((workspace) => {
+              const Icon = typeIcon[workspace.type]
+              return (
+                <Card key={workspace.id} className="flex flex-col p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-surface-2 text-primary">
+                      <Icon size={20} />
+                    </div>
+                    <Badge tone={workspace.isActive ? 'success' : 'neutral'}>
+                      {workspace.isActive ? 'Aktywna' : 'Nieaktywna'}
+                    </Badge>
+                  </div>
+                  <h3 className="mt-4 font-semibold text-fg">{workspace.name}</h3>
+                  <p className="text-sm text-muted">{workspace.type}</p>
+                  <div className="mt-4 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-1.5 text-muted">
+                      <Users size={15} />
+                      {workspace.capacity}
+                    </span>
+                    <span className="font-medium text-fg">{workspace.pricePerHour.toFixed(2)} / h</span>
+                  </div>
+                  <div className="mt-5 flex gap-2 border-t border-border pt-4">
+                    {workspace.isActive && (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setReserveTarget(workspace)
+                          setReserveStart('')
+                          setReserveEnd('')
+                        }}
+                      >
+                        <CalendarPlus size={15} />
+                        Rezerwuj
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => openEdit(workspace)} aria-label="Edytuj">
+                          <Pencil size={15} />
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => setDeleteTarget(workspace)} aria-label="Usuń">
+                          <Trash2 size={15} />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted">
+              Strona {data.page} z {Math.max(1, data.totalPages)} · {data.totalCount} wyników
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={data.page <= 1}
+                onClick={() => setQuery({ ...query, page: data.page - 1 })}
+              >
+                Poprzednia
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={data.page >= data.totalPages}
+                onClick={() => setQuery({ ...query, page: data.page + 1 })}
+              >
+                Następna
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <Card>
+          <EmptyState
+            icon={<LayoutGrid size={22} />}
+            title="Brak przestrzeni"
+            description="Żadna przestrzeń nie pasuje do wybranych filtrów."
+          />
+        </Card>
+      )}
+
+      <Modal
+        open={formModal !== null}
+        onClose={() => setFormModal(null)}
+        title={formModal?.workspace ? 'Edytuj przestrzeń' : 'Nowa przestrzeń'}
+      >
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          <Field label="Nazwa">
+            <Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Typ">
+              <Select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as WorkspaceType })}>
+                {WORKSPACE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Liczba miejsc">
+              <Input
+                type="number"
+                min={1}
+                value={form.capacity}
+                onChange={(event) => setForm({ ...form, capacity: Number(event.target.value) })}
+                required
+              />
+            </Field>
+          </div>
+          <Field label="Cena za godzinę">
+            <Input
               type="number"
               min={0}
               step={0.5}
@@ -178,118 +355,73 @@ export function WorkspacesPage() {
               onChange={(event) => setForm({ ...form, pricePerHour: Number(event.target.value) })}
               required
             />
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={form.isActive ?? true}
-                onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
-              />
-              Active
-            </label>
-          </div>
-          <div className="form-actions">
-            <button type="submit">{editingId ? 'Save' : 'Create'}</button>
-            {editingId && (
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => {
-                  setEditingId(null)
-                  setForm(emptyForm)
-                }}
-              >
-                Cancel
-              </button>
-            )}
+          </Field>
+          <label className="flex items-center gap-2 text-sm text-fg">
+            <input
+              type="checkbox"
+              className="size-4 accent-[var(--color-primary)]"
+              checked={form.isActive ?? true}
+              onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+            />
+            Aktywna
+          </label>
+          <div className="mt-2 flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setFormModal(null)}>
+              Anuluj
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Zapisywanie…' : 'Zapisz'}
+            </Button>
           </div>
         </form>
-      )}
+      </Modal>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Capacity</th>
-            <th>Price/h</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data?.items.map((workspace) => (
-            <tr key={workspace.id}>
-              <td>{workspace.name}</td>
-              <td>{workspace.type}</td>
-              <td>{workspace.capacity}</td>
-              <td>{workspace.pricePerHour.toFixed(2)}</td>
-              <td>{workspace.isActive ? 'Active' : 'Inactive'}</td>
-              <td className="row-actions">
-                {workspace.isActive && (
-                  <button type="button" onClick={() => setReserveId(workspace.id)}>
-                    Reserve
-                  </button>
-                )}
-                {isAdmin && (
-                  <>
-                    <button type="button" className="secondary" onClick={() => startEdit(workspace)}>
-                      Edit
-                    </button>
-                    <button type="button" className="danger" onClick={() => handleDelete(workspace.id)}>
-                      Delete
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-          {data && data.items.length === 0 && (
-            <tr>
-              <td colSpan={6}>No workspaces match the filters.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Modal
+        open={reserveTarget !== null}
+        onClose={() => setReserveTarget(null)}
+        title="Rezerwuj przestrzeń"
+        description={reserveTarget?.name}
+      >
+        <form onSubmit={handleReserve} className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Początek">
+              <Input type="datetime-local" value={reserveStart} onChange={(event) => setReserveStart(event.target.value)} required />
+            </Field>
+            <Field label="Koniec">
+              <Input type="datetime-local" value={reserveEnd} onChange={(event) => setReserveEnd(event.target.value)} required />
+            </Field>
+          </div>
+          <div className="flex items-center justify-between rounded-lg bg-surface-2 px-4 py-3 text-sm">
+            <span className="text-muted">Szacowana cena</span>
+            <span className="font-semibold text-fg">{price === null ? '—' : `${price.toFixed(2)}`}</span>
+          </div>
+          <div className="mt-2 flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setReserveTarget(null)}>
+              Anuluj
+            </Button>
+            <Button type="submit" disabled={reserving}>
+              {reserving ? 'Rezerwowanie…' : 'Potwierdź rezerwację'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
-      {data && (
-        <div className="pagination">
-          <button type="button" disabled={data.page <= 1} onClick={() => setQuery({ ...query, page: data.page - 1 })}>
-            Previous
-          </button>
-          <span>
-            Page {data.page} of {Math.max(1, data.totalPages)} · {data.totalCount} total
-          </span>
-          <button
-            type="button"
-            disabled={data.page >= data.totalPages}
-            onClick={() => setQuery({ ...query, page: data.page + 1 })}
-          >
-            Next
-          </button>
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Usunąć przestrzeń?"
+        description={deleteTarget?.name}
+      >
+        <p className="text-sm text-muted">Tej operacji nie można cofnąć.</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+            Anuluj
+          </Button>
+          <Button variant="danger" onClick={handleDelete}>
+            Usuń
+          </Button>
         </div>
-      )}
-
-      {reserveId && (
-        <form className="form card" onSubmit={handleReserve}>
-          <h3>Reserve workspace</h3>
-          <div className="form-row">
-            <label>
-              Start
-              <input type="datetime-local" value={reserveStart} onChange={(event) => setReserveStart(event.target.value)} required />
-            </label>
-            <label>
-              End
-              <input type="datetime-local" value={reserveEnd} onChange={(event) => setReserveEnd(event.target.value)} required />
-            </label>
-          </div>
-          <div className="form-actions">
-            <button type="submit">Confirm reservation</button>
-            <button type="button" className="secondary" onClick={() => setReserveId(null)}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      </Modal>
     </div>
   )
 }

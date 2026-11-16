@@ -2,51 +2,65 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { ErrorBanner } from '../components/ErrorBanner'
+import { AuthLayout } from '../components/AuthLayout'
+import { Button } from '../components/ui/Button'
+import { Field } from '../components/ui/Field'
+import { Input } from '../components/ui/Input'
+import { getErrorMessage } from '../lib/errors'
+import { useToast } from '../toast/ToastContext'
 
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
   const [email, setEmail] = useState('admin@flexdesk.local')
   const [password, setPassword] = useState('Admin123!')
-  const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    setError(null)
     setBusy(true)
     try {
       await login(email, password)
       navigate('/workspaces')
-    } catch (submitError) {
-      setError(submitError)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="auth-card">
-      <h1>FlexDesk</h1>
-      <h2>Sign in</h2>
-      <ErrorBanner error={error} />
-      <form onSubmit={handleSubmit} className="form">
-        <label>
-          Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-        </label>
-        <button type="submit" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
+    <AuthLayout>
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-fg">Zaloguj się</h2>
+        <p className="mt-1 text-sm text-muted">Witaj ponownie w FlexDesk.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field label="Email">
+          <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" />
+        </Field>
+        <Field label="Hasło">
+          <Input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </Field>
+        <Button type="submit" disabled={busy} className="mt-2 w-full">
+          {busy ? 'Logowanie…' : 'Zaloguj się'}
+        </Button>
       </form>
-      <p>
-        No account? <Link to="/register">Create one</Link>
+
+      <p className="mt-6 text-center text-sm text-muted">
+        Nie masz konta?{' '}
+        <Link to="/register" className="font-medium text-primary hover:underline">
+          Zarejestruj się
+        </Link>
       </p>
-    </div>
+    </AuthLayout>
   )
 }
