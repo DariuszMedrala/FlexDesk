@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CalendarCheck } from 'lucide-react'
+import { useAuth } from '../auth/AuthContext'
 import { cancelReservation, getReservations, payReservation } from '../api/reservations'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -9,6 +10,7 @@ import { Field } from '../components/ui/Field'
 import { Modal } from '../components/ui/Modal'
 import { Select } from '../components/ui/Select'
 import { PageLoader } from '../components/ui/Spinner'
+import { cn } from '../lib/cn'
 import { getErrorMessage } from '../lib/errors'
 import { useToast } from '../toast/ToastContext'
 import type { PaymentMethod, Reservation, ReservationStatus } from '../types/models'
@@ -21,14 +23,48 @@ const statusTone: Record<ReservationStatus, 'warning' | 'success' | 'neutral'> =
   Cancelled: 'neutral',
 }
 
+const statusLabel: Record<ReservationStatus, string> = {
+  Pending: 'Oczekująca',
+  Confirmed: 'Potwierdzona',
+  Cancelled: 'Anulowana',
+}
+
+type StatusFilter = ReservationStatus | 'All'
+
+const statusFilters: { value: StatusFilter; label: string }[] = [
+  { value: 'All', label: 'Wszystkie' },
+  { value: 'Pending', label: 'Oczekujące' },
+  { value: 'Confirmed', label: 'Potwierdzone' },
+  { value: 'Cancelled', label: 'Anulowane' },
+]
+
 function formatDate(value: string): string {
   return new Date(value).toLocaleString()
 }
 
+function sortByUpcoming(list: Reservation[]): Reservation[] {
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const todayMs = startOfToday.getTime()
+
+  return [...list].sort((a, b) => {
+    const aStart = new Date(a.startTime).getTime()
+    const bStart = new Date(b.startTime).getTime()
+    const aUpcoming = aStart >= todayMs
+    const bUpcoming = bStart >= todayMs
+    if (aUpcoming !== bUpcoming) {
+      return aUpcoming ? -1 : 1
+    }
+    return aStart - bStart
+  })
+}
+
 export function ReservationsPage() {
+  const { isAdmin } = useAuth()
   const toast = useToast()
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<StatusFilter>('All')
 
   const [payTarget, setPayTarget] = useState<Reservation | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('Card')
@@ -50,6 +86,11 @@ export function ReservationsPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  const visible = useMemo(() => {
+    const filtered = filter === 'All' ? reservations : reservations.filter((item) => item.status === filter)
+    return sortByUpcoming(filtered)
+  }, [reservations, filter])
 
   async function handlePay() {
     if (!payTarget) {
@@ -85,18 +126,38 @@ export function ReservationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">Moje rezerwacje</h1>
-        <p className="mt-1 text-sm text-muted">Opłacaj i zarządzaj swoimi rezerwacjami.</p>
+        <h1 className="text-2xl font-semibold text-fg">{isAdmin ? 'Wszystkie rezerwacje' : 'Moje rezerwacje'}</h1>
+        <p className="mt-1 text-sm text-muted">
+          {isAdmin ? 'Rezerwacje wszystkich użytkowników.' : 'Opłacaj i zarządzaj swoimi rezerwacjami.'}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {statusFilters.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            onClick={() => setFilter(item.value)}
+            className={cn(
+              'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+              filter === item.value
+                ? 'border-primary bg-primary text-primary-fg'
+                : 'border-border bg-surface text-muted hover:bg-surface-2 hover:text-fg',
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
         <PageLoader />
-      ) : reservations.length === 0 ? (
+      ) : visible.length === 0 ? (
         <Card>
           <EmptyState
             icon={<CalendarCheck size={22} />}
             title="Brak rezerwacji"
-            description="Zarezerwuj przestrzeń w zakładce Workspaces."
+            description={isAdmin ? 'Brak rezerwacji dla wybranego filtra.' : 'Zarezerwuj przestrzeń w zakładce Przestrzenie.'}
           />
         </Card>
       ) : (
@@ -113,18 +174,18 @@ export function ReservationsPage() {
               </tr>
             </thead>
             <tbody>
-              {reservations.map((reservation) => (
+              {visible.map((reservation) => (
                 <tr key={reservation.id} className="border-b border-border last:border-0">
                   <td className="px-5 py-3 font-medium text-fg">{reservation.workspaceName}</td>
                   <td className="px-5 py-3 text-muted">{formatDate(reservation.startTime)}</td>
                   <td className="px-5 py-3 text-muted">{formatDate(reservation.endTime)}</td>
                   <td className="px-5 py-3 text-fg">{reservation.totalPrice.toFixed(2)}</td>
                   <td className="px-5 py-3">
-                    <Badge tone={statusTone[reservation.status]}>{reservation.status}</Badge>
+                    <Badge tone={statusTone[reservation.status]}>{statusLabel[reservation.status]}</Badge>
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-2">
-                      {reservation.status === 'Pending' && (
+                      {!isAdmin && reservation.status === 'Pending' && (
                         <Button
                           size="sm"
                           onClick={() => {
@@ -182,9 +243,7 @@ export function ReservationsPage() {
         title="Anulować rezerwację?"
         description={cancelTarget?.workspaceName}
       >
-        <p className="text-sm text-muted">
-          Rezerwację można anulować najpóźniej 24 godziny przed jej rozpoczęciem.
-        </p>
+        <p className="text-sm text-muted">Rezerwację można anulować najpóźniej 24 godziny przed jej rozpoczęciem.</p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setCancelTarget(null)}>
             Wróć

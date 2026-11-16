@@ -151,7 +151,10 @@ public class ReservationService : IReservationService
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw NotFoundException.For(nameof(Reservation), id);
 
-        EnsureOwnerOrAdmin(reservation);
+        if (reservation.UserId != RequireUserId())
+        {
+            throw new ForbiddenException("Only the owner can pay for a reservation.");
+        }
 
         if (reservation.Status == ReservationStatus.Cancelled)
         {
