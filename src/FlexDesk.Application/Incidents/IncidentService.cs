@@ -87,18 +87,28 @@ public class IncidentService : IIncidentService
             ?? throw NotFoundException.For(nameof(Workspace), request.WorkspaceId);
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var reportingWindow = TimeSpan.FromHours(24);
 
-        var hasStartedReservation = await _context.Reservations.AnyAsync(
-            r => r.UserId == userId
-                && r.WorkspaceId == workspace.Id
-                && r.Status != ReservationStatus.Cancelled
-                && r.StartTime <= now,
-            cancellationToken);
+        var reservations = await _context.Reservations
+            .Where(r => r.UserId == userId && r.WorkspaceId == workspace.Id && r.Status != ReservationStatus.Cancelled)
+            .Select(r => new { r.StartTime, r.EndTime })
+            .ToListAsync(cancellationToken);
 
-        if (!hasStartedReservation)
+        var canReport = reservations.Any(r => r.StartTime <= now && now <= r.EndTime.Add(reportingWindow));
+
+        if (!canReport)
         {
-            throw new BusinessRuleException(
-                "Usterkę możesz zgłosić tylko dla przestrzeni, którą zarezerwowałeś, i dopiero po rozpoczęciu rezerwacji.");
+            if (reservations.Any(r => r.StartTime > now))
+            {
+                throw new BusinessRuleException("Nie można dokonać zgłoszenia — rezerwacja tej przestrzeni jeszcze się nie odbyła.");
+            }
+
+            if (reservations.Any(r => now > r.EndTime.Add(reportingWindow)))
+            {
+                throw new BusinessRuleException("Nie można dokonać zgłoszenia — minęło ponad 24 godziny od zakończenia rezerwacji.");
+            }
+
+            throw new BusinessRuleException("Usterkę możesz zgłosić tylko dla zarezerwowanej przestrzeni.");
         }
 
         var incident = new Incident

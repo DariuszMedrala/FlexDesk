@@ -75,9 +75,10 @@ export function IncidentsPage() {
       if (!isAdmin) {
         const reservations = await getReservations()
         const now = Date.now()
+        const windowMs = 24 * 60 * 60 * 1000
         const map = new Map<string, string>()
         reservations
-          .filter((r) => r.status !== 'Cancelled' && new Date(r.startTime).getTime() <= now)
+          .filter((r) => r.status !== 'Cancelled' && now <= new Date(r.endTime).getTime() + windowMs)
           .forEach((r) => map.set(r.workspaceId, r.workspaceName))
         const options = [...map.entries()].map(([id, name]) => ({ id, name }))
         setEligible(options)
