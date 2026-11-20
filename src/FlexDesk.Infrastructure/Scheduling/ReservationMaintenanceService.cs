@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlexDesk.Infrastructure.Scheduling;
 
-public class ReservationExpiryService : BackgroundService
+public class ReservationMaintenanceService : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan PaymentWindow = TimeSpan.FromHours(1);
@@ -15,13 +15,13 @@ public class ReservationExpiryService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
     private readonly IHostEnvironment _environment;
-    private readonly ILogger<ReservationExpiryService> _logger;
+    private readonly ILogger<ReservationMaintenanceService> _logger;
 
-    public ReservationExpiryService(
+    public ReservationMaintenanceService(
         IServiceScopeFactory scopeFactory,
         TimeProvider timeProvider,
         IHostEnvironment environment,
-        ILogger<ReservationExpiryService> logger)
+        ILogger<ReservationMaintenanceService> logger)
     {
         _scopeFactory = scopeFactory;
         _timeProvider = timeProvider;
@@ -40,11 +40,11 @@ public class ReservationExpiryService : BackgroundService
         {
             try
             {
-                await CancelUnpaidReservationsAsync(stoppingToken);
+                await RunAsync(stoppingToken);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Failed to auto-cancel unpaid reservations");
+                _logger.LogError(exception, "Reservation maintenance tick failed");
             }
 
             try
@@ -58,28 +58,40 @@ public class ReservationExpiryService : BackgroundService
         }
     }
 
-    private async Task CancelUnpaidReservationsAsync(CancellationToken cancellationToken)
+    private async Task RunAsync(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<FlexDeskDbContext>();
 
-        var threshold = _timeProvider.GetUtcNow().UtcDateTime.Add(PaymentWindow);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var expired = await context.Reservations
-            .Where(r => r.Status == ReservationStatus.Pending && r.StartTime <= threshold)
+        var unpaid = await context.Reservations
+            .Where(r => r.Status == ReservationStatus.Pending && r.StartTime <= now.Add(PaymentWindow))
             .ToListAsync(cancellationToken);
 
-        if (expired.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var reservation in expired)
+        foreach (var reservation in unpaid)
         {
             reservation.Status = ReservationStatus.Cancelled;
         }
 
+        var finished = await context.Reservations
+            .Where(r => r.Status == ReservationStatus.Confirmed && r.EndTime <= now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var reservation in finished)
+        {
+            reservation.Status = ReservationStatus.Completed;
+        }
+
+        if (unpaid.Count == 0 && finished.Count == 0)
+        {
+            return;
+        }
+
         await context.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Auto-cancelled {Count} unpaid reservation(s) within the payment window", expired.Count);
+        _logger.LogInformation(
+            "Reservation maintenance: cancelled {Cancelled} unpaid, completed {Completed} finished",
+            unpaid.Count,
+            finished.Count);
     }
 }

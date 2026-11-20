@@ -1,5 +1,5 @@
 export type WorkspaceType = 'HotDesk' | 'MeetingRoom' | 'Office'
-export type ReservationStatus = 'Pending' | 'Confirmed' | 'Cancelled'
+export type ReservationStatus = 'Pending' | 'Confirmed' | 'Cancelled' | 'Completed'
 export type IncidentStatus = 'Reported' | 'InProgress' | 'Resolved'
 export type PaymentMethod = 'Card' | 'BankTransfer' | 'Cash'
 export type UserRole = 'User' | 'Admin'

@@ -41,7 +41,7 @@ public static class DependencyInjection
         services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddHostedService<ReservationConfirmedConsumer>();
-        services.AddHostedService<ReservationExpiryService>();
+        services.AddHostedService<ReservationMaintenanceService>();
 
         return services;
     }

@@ -169,6 +169,11 @@ public class ReservationService : IReservationService
             throw new ConflictException("Ta rezerwacja została już opłacona.");
         }
 
+        if (reservation.Status == ReservationStatus.Completed)
+        {
+            throw new ConflictException("Rezerwacja została już zrealizowana.");
+        }
+
         var slotTaken = await _context.Reservations.AnyAsync(
             r => r.Id != reservation.Id
                 && r.WorkspaceId == reservation.WorkspaceId
@@ -215,6 +220,11 @@ public class ReservationService : IReservationService
         if (reservation.Status == ReservationStatus.Cancelled)
         {
             throw new ConflictException("Rezerwacja jest już anulowana.");
+        }
+
+        if (reservation.Status == ReservationStatus.Completed)
+        {
+            throw new BusinessRuleException("Nie można anulować odbytej rezerwacji.");
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;

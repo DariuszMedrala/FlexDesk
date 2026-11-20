@@ -17,16 +17,18 @@ import type { PaymentMethod, Reservation, ReservationStatus } from '../types/mod
 
 const PAYMENT_METHODS: PaymentMethod[] = ['Card', 'BankTransfer', 'Cash']
 
-const statusTone: Record<ReservationStatus, 'warning' | 'success' | 'neutral'> = {
+const statusTone: Record<ReservationStatus, 'warning' | 'success' | 'neutral' | 'info'> = {
   Pending: 'warning',
   Confirmed: 'success',
   Cancelled: 'neutral',
+  Completed: 'info',
 }
 
 const statusLabel: Record<ReservationStatus, string> = {
   Pending: 'Oczekująca',
   Confirmed: 'Potwierdzona',
   Cancelled: 'Anulowana',
+  Completed: 'Odbyta',
 }
 
 type StatusFilter = ReservationStatus | 'All'
@@ -35,6 +37,7 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: 'All', label: 'Wszystkie' },
   { value: 'Pending', label: 'Oczekujące' },
   { value: 'Confirmed', label: 'Potwierdzone' },
+  { value: 'Completed', label: 'Odbyte' },
   { value: 'Cancelled', label: 'Anulowane' },
 ]
 
@@ -211,7 +214,7 @@ export function ReservationsPage() {
                           Opłać
                         </Button>
                       )}
-                      {reservation.status !== 'Cancelled' && (
+                      {(reservation.status === 'Pending' || reservation.status === 'Confirmed') && (
                         <Button size="sm" variant="danger" onClick={() => setCancelTarget(reservation)}>
                           Anuluj
                         </Button>
