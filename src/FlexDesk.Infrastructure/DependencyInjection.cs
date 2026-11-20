@@ -6,6 +6,7 @@ using FlexDesk.Infrastructure.Email;
 using FlexDesk.Infrastructure.Messaging;
 using FlexDesk.Infrastructure.Persistence;
 using FlexDesk.Infrastructure.Persistence.Seed;
+using FlexDesk.Infrastructure.Scheduling;
 using FlexDesk.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -40,6 +41,7 @@ public static class DependencyInjection
         services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddHostedService<ReservationConfirmedConsumer>();
+        services.AddHostedService<ReservationExpiryService>();
 
         return services;
     }

@@ -135,7 +135,9 @@ export function ReservationsPage() {
       <div>
         <h1 className="text-2xl font-semibold text-fg">{isAdmin ? 'Wszystkie rezerwacje' : 'Moje rezerwacje'}</h1>
         <p className="mt-1 text-sm text-muted">
-          {isAdmin ? 'Rezerwacje wszystkich użytkowników.' : 'Opłacaj i zarządzaj swoimi rezerwacjami.'}
+          {isAdmin
+            ? 'Rezerwacje wszystkich użytkowników.'
+            : 'Opłacaj i zarządzaj swoimi rezerwacjami. Nieopłacona rezerwacja zostaje automatycznie anulowana na godzinę przed rozpoczęciem.'}
         </p>
       </div>
 
