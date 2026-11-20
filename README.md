@@ -82,6 +82,8 @@ erDiagram
         guid Id PK
         string Email UK
         string PasswordHash
+        string FirstName
+        string LastName
         enum Role
         datetime CreatedAt
     }
@@ -92,6 +94,10 @@ erDiagram
         int Capacity
         decimal PricePerHour
         bool IsActive
+        string City
+        string Street
+        string BuildingNumber
+        int Floor
     }
     Reservation {
         guid Id PK
@@ -190,11 +196,12 @@ Zakładane automatycznie przy pierwszym uruchomieniu:
 ### Role
 
 - **USER** — przegląda i filtruje przestrzenie, rezerwuje, opłaca (symulacja), anuluje swoje rezerwacje, zgłasza usterki; widzi tylko swoje dane.
-- **ADMIN** — zarządza katalogiem przestrzeni (CRUD), widzi wszystkie rezerwacje, prowadzi workflow zgłoszeń usterek.
+- **ADMIN** — zarządza katalogiem przestrzeni (CRUD), widzi wszystkie rezerwacje użytkowników, prowadzi workflow zgłoszeń usterek, przegląda listę użytkowników. Nie opłaca ani nie zgłasza usterek.
 
 ### Przepływ rezerwacji
 
-`Pending` (utworzona) → `Confirmed` (po opłaceniu) → opcjonalnie `Cancelled` (anulowana).
+`Pending` (utworzona) → `Confirmed` (po opłaceniu) → `Completed` (po zakończeniu terminu), lub `Cancelled` (anulowana).
+Usługa w tle (scheduler) co minutę: **automatycznie anuluje** nieopłaconą rezerwację na godzinę przed startem oraz oznacza opłaconą po terminie jako `Completed` (Odbyta).
 Po potwierdzeniu system publikuje zdarzenie do RabbitMQ, a usługa w tle wysyła e-mail z potwierdzeniem.
 
 ---
@@ -208,7 +215,10 @@ Zaimplementowane w warstwie serwisów (poza kontrolerami):
 3. **Minimalny czas wg typu** — HotDesk ≥ 1h, MeetingRoom ≥ 2h, Office ≥ 4h.
 4. **Dynamiczna wycena** — cena = liczba godzin × stawka; dla rezerwacji ≥ 8h rabat 10%. Cenę liczy serwer.
 
-Dodatkowo: zgłoszenie usterki ma stan terminalny (`Resolved` nie da się zmienić), a przestrzeni z rezerwacjami nie można usunąć.
+Dodatkowo:
+- nieopłacona rezerwacja jest automatycznie anulowana na godzinę przed startem, a opłacona po terminie oznaczana jako `Completed`;
+- usterkę można zgłosić tylko w oknie od rozpoczęcia rezerwacji do 24h po jej zakończeniu (tylko przez osobę, która ją zarezerwowała);
+- zgłoszenie usterki ma stan terminalny (`Resolved` nie da się zmienić), a przestrzeni z rezerwacjami nie można usunąć.
 
 ---
 
@@ -216,7 +226,7 @@ Dodatkowo: zgłoszenie usterki ma stan terminalny (`Resolved` nie da się zmieni
 
 ### Swagger / OpenAPI
 
-W trybie deweloperskim interaktywna dokumentacja jest dostępna pod **http://localhost:5249/swagger** (przycisk „Authorize" pozwala wkleić token JWT).
+Interaktywna dokumentacja (OpenAPI) jest dostępna pod **http://localhost:5080/swagger** (uruchomienie w kontenerze) lub **http://localhost:5249/swagger** (uruchomienie lokalne). Przycisk „Authorize" pozwala wkleić token JWT i testować chronione endpointy.
 
 ### Endpointy
 
@@ -226,20 +236,25 @@ W trybie deweloperskim interaktywna dokumentacja jest dostępna pod **http://loc
 | POST | `/api/auth/login` | publiczny | Logowanie (zwraca token) |
 | GET | `/api/workspaces` | publiczny | Lista przestrzeni (paginacja + filtry) |
 | GET | `/api/workspaces/{id}` | publiczny | Szczegóły przestrzeni |
+| GET | `/api/workspaces/{id}/occupied-slots` | zalogowany | Zajęte (przyszłe) terminy przestrzeni |
 | POST | `/api/workspaces` | ADMIN | Utworzenie przestrzeni |
 | PUT | `/api/workspaces/{id}` | ADMIN | Edycja przestrzeni |
 | DELETE | `/api/workspaces/{id}` | ADMIN | Usunięcie przestrzeni |
 | GET | `/api/reservations` | zalogowany | Rezerwacje (swoje / wszystkie dla admina) |
 | GET | `/api/reservations/{id}` | właściciel/ADMIN | Szczegóły rezerwacji |
 | POST | `/api/reservations` | zalogowany | Utworzenie rezerwacji |
-| POST | `/api/reservations/{id}/pay` | właściciel/ADMIN | Opłacenie rezerwacji |
+| POST | `/api/reservations/{id}/pay` | właściciel | Opłacenie rezerwacji |
 | POST | `/api/reservations/{id}/cancel` | właściciel/ADMIN | Anulowanie rezerwacji |
 | GET | `/api/incidents` | zalogowany | Zgłoszenia (swoje / wszystkie dla admina) |
 | GET | `/api/incidents/{id}` | właściciel/ADMIN | Szczegóły zgłoszenia |
-| POST | `/api/incidents` | zalogowany | Zgłoszenie usterki |
+| POST | `/api/incidents` | zalogowany (nie admin) | Zgłoszenie usterki (w oknie rezerwacji) |
 | PUT | `/api/incidents/{id}/status` | ADMIN | Zmiana statusu zgłoszenia |
+| GET | `/api/users` | ADMIN | Lista użytkowników (paginacja) |
+| GET | `/api/account/me` | zalogowany | Dane zalogowanego użytkownika |
+| PUT | `/api/account/me` | zalogowany | Edycja własnych danych |
+| PUT | `/api/account/password` | zalogowany | Zmiana hasła |
 
-Parametry listy przestrzeni: `?page=&pageSize=&type=&minCapacity=&isActive=&search=`.
+Parametry listy przestrzeni: `?page=&pageSize=&type=&minCapacity=&isActive=&search=` (wyszukiwanie po nazwie i mieście).
 
 ---
 
