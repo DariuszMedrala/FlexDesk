@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using FlexDesk.Application.Account;
 using FlexDesk.Application.Authentication;
 using FlexDesk.Application.Incidents;
 using FlexDesk.Application.Reservations;
@@ -22,6 +23,7 @@ public static class DependencyInjection
 
         services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<IIncidentService, IncidentService>();
         services.AddScoped<IUserService, UserService>();

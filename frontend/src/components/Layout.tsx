@@ -1,4 +1,4 @@
-import { CalendarCheck, LayoutGrid, LogOut, Moon, Sun, TriangleAlert, Users } from 'lucide-react'
+import { CalendarCheck, LayoutGrid, LogOut, Moon, Settings, Sun, TriangleAlert, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -18,6 +18,8 @@ const navItems: NavItem[] = [
 ]
 
 const adminNavItems: NavItem[] = [{ to: '/users', label: 'Użytkownicy', icon: Users }]
+
+const settingsNavItem: NavItem = { to: '/settings', label: 'Ustawienia', icon: Settings }
 
 function BrandMark() {
   return (
@@ -62,7 +64,7 @@ export function Layout() {
     navigate('/login')
   }
 
-  const navLinks = isAdmin ? [...navItems, ...adminNavItems] : navItems
+  const navLinks = [...navItems, ...(isAdmin ? adminNavItems : []), settingsNavItem]
 
   return (
     <div className="flex min-h-screen">

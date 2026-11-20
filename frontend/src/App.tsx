@@ -5,6 +5,7 @@ import { IncidentsPage } from './pages/IncidentsPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ReservationsPage } from './pages/ReservationsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { UsersPage } from './pages/UsersPage'
 import { WorkspacesPage } from './pages/WorkspacesPage'
 
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/reservations" element={<ReservationsPage />} />
         <Route path="/incidents" element={<IncidentsPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/" element={<Navigate to="/workspaces" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

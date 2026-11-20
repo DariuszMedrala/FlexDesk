@@ -17,6 +17,7 @@ interface AuthContextValue {
   isAdmin: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>
+  updateProfile: (data: { firstName: string; lastName: string; email: string }) => void
   logout: () => void
 }
 
@@ -64,6 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: async (email, password) => persist(await authApi.login(email, password)),
       register: async (email, password, firstName, lastName) =>
         persist(await authApi.register(email, password, firstName, lastName)),
+      updateProfile: (data) => {
+        if (!auth) {
+          return
+        }
+        persist({ ...auth, firstName: data.firstName, lastName: data.lastName, email: data.email })
+      },
       logout: () => {
         localStorage.removeItem(AUTH_STORAGE_KEY)
         setAuth(null)
