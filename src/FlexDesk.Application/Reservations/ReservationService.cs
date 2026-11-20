@@ -91,7 +91,7 @@ public class ReservationService : IReservationService
 
         if (startTime <= now)
         {
-            throw new BusinessRuleException("Reservation start time must be in the future.");
+            throw new BusinessRuleException("Rezerwacja musi zaczynać się w przyszłości.");
         }
 
         var workspace = await _context.Workspaces
@@ -100,14 +100,14 @@ public class ReservationService : IReservationService
 
         if (!workspace.IsActive)
         {
-            throw new BusinessRuleException("Workspace is not available for reservations.");
+            throw new BusinessRuleException("Ta przestrzeń nie jest dostępna do rezerwacji.");
         }
 
         if (!ReservationPolicy.MeetsMinimumDuration(workspace.Type, endTime - startTime))
         {
             var minimumHours = ReservationPolicy.MinimumDuration(workspace.Type).TotalHours;
             throw new BusinessRuleException(
-                $"A {workspace.Type} must be reserved for at least {minimumHours:0} hour(s).");
+                $"{WorkspaceTypeName(workspace.Type)} wymaga rezerwacji na co najmniej {minimumHours:0} godz.");
         }
 
         var hasConflict = await _context.Reservations.AnyAsync(
@@ -119,7 +119,7 @@ public class ReservationService : IReservationService
 
         if (hasConflict)
         {
-            throw new ConflictException("The workspace is already reserved for the selected time range.");
+            throw new ConflictException("Ta przestrzeń jest już zarezerwowana w wybranym terminie.");
         }
 
         var reservation = new Reservation
@@ -156,17 +156,30 @@ public class ReservationService : IReservationService
 
         if (reservation.UserId != RequireUserId())
         {
-            throw new ForbiddenException("Only the owner can pay for a reservation.");
+            throw new ForbiddenException("Rezerwację może opłacić tylko jej właściciel.");
         }
 
         if (reservation.Status == ReservationStatus.Cancelled)
         {
-            throw new BusinessRuleException("A cancelled reservation cannot be paid.");
+            throw new BusinessRuleException("Nie można opłacić anulowanej rezerwacji.");
         }
 
         if (reservation.Status == ReservationStatus.Confirmed)
         {
-            throw new ConflictException("The reservation has already been paid.");
+            throw new ConflictException("Ta rezerwacja została już opłacona.");
+        }
+
+        var slotTaken = await _context.Reservations.AnyAsync(
+            r => r.Id != reservation.Id
+                && r.WorkspaceId == reservation.WorkspaceId
+                && r.Status != ReservationStatus.Cancelled
+                && r.StartTime < reservation.EndTime
+                && reservation.StartTime < r.EndTime,
+            cancellationToken);
+
+        if (slotTaken)
+        {
+            throw new ConflictException("Ta przestrzeń została już zarezerwowana w tym terminie.");
         }
 
         var payment = new Payment
@@ -201,14 +214,14 @@ public class ReservationService : IReservationService
 
         if (reservation.Status == ReservationStatus.Cancelled)
         {
-            throw new ConflictException("The reservation is already cancelled.");
+            throw new ConflictException("Rezerwacja jest już anulowana.");
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         if (!ReservationPolicy.CanCancel(reservation.StartTime, now, _currentUser.IsAdmin))
         {
             throw new BusinessRuleException(
-                $"A reservation can only be cancelled more than {ReservationPolicy.CancellationCutoffHours} hours before it starts.");
+                $"Rezerwację można anulować najpóźniej {ReservationPolicy.CancellationCutoffHours} godziny przed jej rozpoczęciem.");
         }
 
         reservation.Status = ReservationStatus.Cancelled;
@@ -238,16 +251,23 @@ public class ReservationService : IReservationService
     }
 
     private Guid RequireUserId() =>
-        _currentUser.UserId ?? throw new UnauthorizedException("Authentication is required.");
+        _currentUser.UserId ?? throw new UnauthorizedException("Wymagane jest zalogowanie.");
 
     private void EnsureOwnerOrAdmin(Reservation reservation)
     {
         var userId = RequireUserId();
         if (!_currentUser.IsAdmin && reservation.UserId != userId)
         {
-            throw new ForbiddenException("You do not have access to this reservation.");
+            throw new ForbiddenException("Nie masz dostępu do tej rezerwacji.");
         }
     }
+
+    private static string WorkspaceTypeName(WorkspaceType type) => type switch
+    {
+        WorkspaceType.HotDesk => "Biurko",
+        WorkspaceType.MeetingRoom => "Sala konferencyjna",
+        _ => "Biuro",
+    };
 
     private static DateTime AsUtc(DateTime value) => value.Kind switch
     {

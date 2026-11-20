@@ -53,3 +53,12 @@ export function updateWorkspace(id: string, input: WorkspaceInput): Promise<Work
 export function deleteWorkspace(id: string): Promise<void> {
   return apiFetch<void>(`/workspaces/${id}`, { method: 'DELETE' })
 }
+
+export interface WorkspaceSlot {
+  startTime: string
+  endTime: string
+}
+
+export function getOccupiedSlots(id: string): Promise<WorkspaceSlot[]> {
+  return apiFetch<WorkspaceSlot[]>(`/workspaces/${id}/occupied-slots`)
+}

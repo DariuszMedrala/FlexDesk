@@ -15,7 +15,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("en");
+        ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("pl");
 
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 

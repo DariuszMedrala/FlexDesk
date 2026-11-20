@@ -16,6 +16,6 @@ public class CreateReservationRequestValidator : AbstractValidator<CreateReserva
         RuleFor(x => x.EndTime)
             .NotEmpty()
             .GreaterThan(x => x.StartTime)
-            .WithMessage("End time must be after start time.");
+            .WithMessage("Czas zakończenia musi być późniejszy niż czas rozpoczęcia.");
     }
 }

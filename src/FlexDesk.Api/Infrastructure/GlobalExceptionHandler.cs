@@ -38,18 +38,18 @@ public class GlobalExceptionHandler : IExceptionHandler
             Status = statusCode,
             Title = title,
             Detail = statusCode == StatusCodes.Status500InternalServerError
-                ? "An unexpected error occurred."
+                ? "Wystąpił nieoczekiwany błąd."
                 : exception.Message
         };
 
         if (exception is DbUpdateConcurrencyException)
         {
-            problemDetails.Detail = "The resource was modified concurrently. Please retry.";
+            problemDetails.Detail = "Zasób został zmodyfikowany równolegle. Spróbuj ponownie.";
         }
 
         if (exception is ValidationException validationException)
         {
-            problemDetails.Detail = "One or more validation errors occurred.";
+            problemDetails.Detail = "Wystąpiły błędy walidacji.";
             problemDetails.Extensions["errors"] = validationException.Errors
                 .GroupBy(failure => failure.PropertyName)
                 .ToDictionary(
@@ -67,13 +67,13 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     private static (int StatusCode, string Title) MapException(Exception exception) => exception switch
     {
-        ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
-        UnauthorizedException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
-        ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
-        NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
-        ConflictException => (StatusCodes.Status409Conflict, "Conflict"),
-        DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Conflict"),
-        BusinessRuleException => (StatusCodes.Status400BadRequest, "Business rule violated"),
-        _ => (StatusCodes.Status500InternalServerError, "Internal server error")
+        ValidationException => (StatusCodes.Status400BadRequest, "Błąd walidacji"),
+        UnauthorizedException => (StatusCodes.Status401Unauthorized, "Brak autoryzacji"),
+        ForbiddenException => (StatusCodes.Status403Forbidden, "Brak uprawnień"),
+        NotFoundException => (StatusCodes.Status404NotFound, "Nie znaleziono"),
+        ConflictException => (StatusCodes.Status409Conflict, "Konflikt"),
+        DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Konflikt"),
+        BusinessRuleException => (StatusCodes.Status400BadRequest, "Naruszono regułę biznesową"),
+        _ => (StatusCodes.Status500InternalServerError, "Błąd serwera")
     };
 }

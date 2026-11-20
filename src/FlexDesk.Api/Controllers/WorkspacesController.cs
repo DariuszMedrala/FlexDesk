@@ -34,6 +34,14 @@ public class WorkspacesController : ControllerBase
         return Ok(workspace);
     }
 
+    [HttpGet("{id:guid}/occupied-slots")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<WorkspaceSlotDto>>> GetOccupiedSlots(Guid id, CancellationToken cancellationToken)
+    {
+        var slots = await _workspaceService.GetOccupiedSlotsAsync(id, cancellationToken);
+        return Ok(slots);
+    }
+
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<ActionResult<WorkspaceDto>> Create(CreateWorkspaceRequest request, CancellationToken cancellationToken)

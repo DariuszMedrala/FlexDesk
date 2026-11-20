@@ -50,7 +50,7 @@ public class AccountService : IAccountService
 
             if (emailTaken)
             {
-                throw new ConflictException($"Email '{normalizedEmail}' is already registered.");
+                throw new ConflictException($"Adres e-mail '{normalizedEmail}' jest już zarejestrowany.");
             }
         }
 
@@ -71,7 +71,7 @@ public class AccountService : IAccountService
 
         if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
         {
-            throw new BusinessRuleException("The current password is incorrect.");
+            throw new BusinessRuleException("Obecne hasło jest nieprawidłowe.");
         }
 
         user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
@@ -81,7 +81,7 @@ public class AccountService : IAccountService
 
     private async Task<User> LoadCurrentUserAsync(CancellationToken cancellationToken)
     {
-        var userId = _currentUser.UserId ?? throw new UnauthorizedException("Authentication is required.");
+        var userId = _currentUser.UserId ?? throw new UnauthorizedException("Wymagane jest zalogowanie.");
 
         return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
             ?? throw NotFoundException.For(nameof(User), userId);

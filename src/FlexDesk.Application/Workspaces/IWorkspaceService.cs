@@ -7,6 +7,8 @@ public interface IWorkspaceService
 {
     Task<PagedResult<WorkspaceDto>> GetAsync(WorkspaceQuery query, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<WorkspaceSlotDto>> GetOccupiedSlotsAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<WorkspaceDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<WorkspaceDto> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken = default);

@@ -42,7 +42,7 @@ public class AuthService : IAuthService
 
         if (emailTaken)
         {
-            throw new ConflictException($"Email '{normalizedEmail}' is already registered.");
+            throw new ConflictException($"Adres e-mail '{normalizedEmail}' jest już zarejestrowany.");
         }
 
         var user = new User
@@ -73,7 +73,7 @@ public class AuthService : IAuthService
 
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
-            throw new UnauthorizedException("Invalid email or password.");
+            throw new UnauthorizedException("Nieprawidłowy e-mail lub hasło.");
         }
 
         return CreateResponse(user);

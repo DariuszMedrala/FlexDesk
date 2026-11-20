@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Building2,
+  CalendarClock,
   CalendarPlus,
   LayoutGrid,
   MapPin,
@@ -18,10 +19,12 @@ import { createReservation } from '../api/reservations'
 import {
   createWorkspace,
   deleteWorkspace,
+  getOccupiedSlots,
   getWorkspaces,
   updateWorkspace,
 } from '../api/workspaces'
-import type { WorkspaceInput, WorkspaceQuery } from '../api/workspaces'
+import type { WorkspaceInput, WorkspaceQuery, WorkspaceSlot } from '../api/workspaces'
+import { Spinner } from '../components/ui/Spinner'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
@@ -78,6 +81,10 @@ function locationLine(workspace: Workspace): string {
   return `${workspace.city}, ul. ${workspace.street} ${workspace.buildingNumber} · ${floorLabel(workspace.floor)}`
 }
 
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString()
+}
+
 function previewPrice(pricePerHour: number, start: string, end: string): number | null {
   if (!start || !end) {
     return null
@@ -113,6 +120,10 @@ export function WorkspacesPage() {
   const [reserving, setReserving] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<Workspace | null>(null)
+
+  const [slotsTarget, setSlotsTarget] = useState<Workspace | null>(null)
+  const [slots, setSlots] = useState<WorkspaceSlot[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -206,6 +217,19 @@ export function WorkspacesPage() {
     }
   }
 
+  async function openSlots(workspace: Workspace) {
+    setSlotsTarget(workspace)
+    setSlots([])
+    setSlotsLoading(true)
+    try {
+      setSlots(await getOccupiedSlots(workspace.id))
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setSlotsLoading(false)
+    }
+  }
+
   const price = reserveTarget ? previewPrice(reserveTarget.pricePerHour, reserveStart, reserveEnd) : null
 
   return (
@@ -232,7 +256,7 @@ export function WorkspacesPage() {
           <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
           <Input
             className="pl-9"
-            placeholder="Szukaj po nazwie"
+            placeholder="Szukaj po nazwie lub mieście"
             value={query.search ?? ''}
             onChange={(event) => setQuery({ ...query, page: 1, search: event.target.value })}
           />
@@ -270,7 +294,11 @@ export function WorkspacesPage() {
               const meta = typeMeta[workspace.type]
               const Icon = meta.icon
               return (
-                <Card key={workspace.id} className={cn('flex flex-col border-l-4 p-5', meta.accent)}>
+                <Card
+                  key={workspace.id}
+                  onClick={() => openSlots(workspace)}
+                  className={cn('flex cursor-pointer flex-col border-l-4 p-5 transition-shadow hover:shadow-pop', meta.accent)}
+                >
                   <div className="flex items-start justify-between">
                     <div className={cn('flex size-10 items-center justify-center rounded-lg', meta.iconClass)}>
                       <Icon size={20} />
@@ -297,7 +325,8 @@ export function WorkspacesPage() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation()
                           setReserveTarget(workspace)
                           setReserveStart('')
                           setReserveEnd('')
@@ -309,11 +338,27 @@ export function WorkspacesPage() {
                     )}
                     {isAdmin && (
                       <>
-                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => openEdit(workspace)}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="flex-1"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openEdit(workspace)
+                          }}
+                        >
                           <Pencil size={15} />
                           Edytuj
                         </Button>
-                        <Button size="sm" variant="danger" onClick={() => setDeleteTarget(workspace)} aria-label="Usuń">
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setDeleteTarget(workspace)
+                          }}
+                          aria-label="Usuń"
+                        >
                           <Trash2 size={15} />
                         </Button>
                       </>
@@ -485,6 +530,36 @@ export function WorkspacesPage() {
             Usuń
           </Button>
         </div>
+      </Modal>
+
+      <Modal
+        open={slotsTarget !== null}
+        onClose={() => setSlotsTarget(null)}
+        title="Zajęte terminy"
+        description={slotsTarget ? `${slotsTarget.name} · nadchodzące rezerwacje` : undefined}
+      >
+        {slotsLoading ? (
+          <div className="flex justify-center py-8">
+            <Spinner className="size-5" />
+          </div>
+        ) : slots.length === 0 ? (
+          <div className="flex items-center gap-2 rounded-lg bg-success-bg px-4 py-3 text-sm text-success">
+            <CalendarClock size={16} />
+            Brak nadchodzących rezerwacji — ta przestrzeń jest wolna.
+          </div>
+        ) : (
+          <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto">
+            {slots.map((slot) => (
+              <li
+                key={slot.startTime}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-fg"
+              >
+                <CalendarClock size={15} className="shrink-0 text-muted" />
+                {formatDateTime(slot.startTime)} – {formatDateTime(slot.endTime)}
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal>
     </div>
   )

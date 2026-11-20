@@ -3,6 +3,7 @@ using FlexDesk.Application.Common.Models;
 using FlexDesk.Application.Common.Persistence;
 using FlexDesk.Application.Workspaces.Dtos;
 using FlexDesk.Domain.Entities;
+using FlexDesk.Domain.Enums;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,7 +50,7 @@ public class WorkspaceService : IWorkspaceService
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim().ToLower();
-            workspaces = workspaces.Where(w => w.Name.ToLower().Contains(search));
+            workspaces = workspaces.Where(w => w.Name.ToLower().Contains(search) || w.City.ToLower().Contains(search));
         }
 
         var totalCount = await workspaces.CountAsync(cancellationToken);
@@ -82,6 +83,24 @@ public class WorkspaceService : IWorkspaceService
             ?? throw NotFoundException.For(nameof(Workspace), id);
 
         return workspace.ToDto();
+    }
+
+    public async Task<IReadOnlyList<WorkspaceSlotDto>> GetOccupiedSlotsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var exists = await _context.Workspaces.AnyAsync(w => w.Id == id, cancellationToken);
+        if (!exists)
+        {
+            throw NotFoundException.For(nameof(Workspace), id);
+        }
+
+        var now = DateTime.UtcNow;
+
+        return await _context.Reservations
+            .AsNoTracking()
+            .Where(r => r.WorkspaceId == id && r.Status != ReservationStatus.Cancelled && r.EndTime > now)
+            .OrderBy(r => r.StartTime)
+            .Select(r => new WorkspaceSlotDto(r.StartTime, r.EndTime))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<WorkspaceDto> CreateAsync(CreateWorkspaceRequest request, CancellationToken cancellationToken = default)
@@ -142,7 +161,7 @@ public class WorkspaceService : IWorkspaceService
 
         if (hasReservations)
         {
-            throw new ConflictException("Workspace cannot be deleted while it has reservations. Deactivate it instead.");
+            throw new ConflictException("Nie można usunąć przestrzeni z rezerwacjami. Zamiast tego ją dezaktywuj.");
         }
 
         _context.Workspaces.Remove(workspace);

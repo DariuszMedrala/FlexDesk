@@ -8,5 +8,5 @@ public class NotFoundException : Exception
     }
 
     public static NotFoundException For(string entity, object key) =>
-        new($"{entity} with id '{key}' was not found.");
+        new($"Nie znaleziono żądanego zasobu ({entity}: {key}).");
 }

@@ -79,7 +79,7 @@ public class IncidentService : IIncidentService
 
         if (_currentUser.IsAdmin)
         {
-            throw new ForbiddenException("Administrators cannot report incidents.");
+            throw new ForbiddenException("Administrator nie może zgłaszać usterek.");
         }
 
         var workspace = await _context.Workspaces
@@ -98,7 +98,7 @@ public class IncidentService : IIncidentService
         if (!hasStartedReservation)
         {
             throw new BusinessRuleException(
-                "You can report an issue only for a space you have reserved, and only after your reservation has started.");
+                "Usterkę możesz zgłosić tylko dla przestrzeni, którą zarezerwowałeś, i dopiero po rozpoczęciu rezerwacji.");
         }
 
         var incident = new Incident
@@ -131,7 +131,7 @@ public class IncidentService : IIncidentService
 
         if (incident.Status == IncidentStatus.Resolved)
         {
-            throw new BusinessRuleException("A resolved incident can no longer change status.");
+            throw new BusinessRuleException("Rozwiązanego zgłoszenia nie można już zmienić.");
         }
 
         incident.Status = request.Status;
@@ -145,14 +145,14 @@ public class IncidentService : IIncidentService
     }
 
     private Guid RequireUserId() =>
-        _currentUser.UserId ?? throw new UnauthorizedException("Authentication is required.");
+        _currentUser.UserId ?? throw new UnauthorizedException("Wymagane jest zalogowanie.");
 
     private void EnsureOwnerOrAdmin(Incident incident)
     {
         var userId = RequireUserId();
         if (!_currentUser.IsAdmin && incident.UserId != userId)
         {
-            throw new ForbiddenException("You do not have access to this incident.");
+            throw new ForbiddenException("Nie masz dostępu do tego zgłoszenia.");
         }
     }
 }

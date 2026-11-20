@@ -100,13 +100,13 @@ public class ReservationConfirmedConsumer : BackgroundService
     private async Task SendConfirmationEmailAsync(ReservationConfirmedEvent confirmation, CancellationToken cancellationToken)
     {
         var culture = CultureInfo.InvariantCulture;
-        var subject = $"Reservation confirmed: {confirmation.WorkspaceName}";
+        var subject = $"Potwierdzenie rezerwacji: {confirmation.WorkspaceName}";
         var body = string.Create(culture,
-            $"Your reservation for {confirmation.WorkspaceName} is confirmed.\n" +
-            $"From: {confirmation.StartTime:yyyy-MM-dd HH:mm} UTC\n" +
-            $"To:   {confirmation.EndTime:yyyy-MM-dd HH:mm} UTC\n" +
-            $"Amount paid: {confirmation.Amount:0.00}\n\n" +
-            $"Thank you for using FlexDesk.");
+            $"Twoja rezerwacja przestrzeni {confirmation.WorkspaceName} została potwierdzona.\n" +
+            $"Od:   {confirmation.StartTime:yyyy-MM-dd HH:mm} UTC\n" +
+            $"Do:   {confirmation.EndTime:yyyy-MM-dd HH:mm} UTC\n" +
+            $"Zapłacono: {confirmation.Amount:0.00}\n\n" +
+            $"Dziękujemy za skorzystanie z FlexDesk.");
 
         await _emailSender.SendAsync(confirmation.UserEmail, subject, body, cancellationToken);
 
